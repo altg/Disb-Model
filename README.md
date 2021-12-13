@@ -6,3 +6,8 @@ Code Provided by Moody's Team
 - Richard Loeser
 - Andrius Rubinas
 - Hafiz Asad
+
+File Structure
+
+Disb Model - Model for Projects and LoF
+Disb Model\Trade - Model for Trade Finance
