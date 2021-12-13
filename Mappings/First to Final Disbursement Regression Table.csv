@@ -1,0 +1,144 @@
+input,value
+Intercept,2.868302023
+Adjustment Ratio,1.243762
+Sigma,0.9516755
+Afghanistan,0
+Albania,0
+Algeria,0
+Azerbaijan,0
+Bahrain,0
+Bangladesh,-0.067676411
+Benin,0.125405974
+Brunei,0
+Burkina Faso,0.440457687
+Cameroon,0.002247316
+Chad,0.29574689
+Comoros,0
+Cote D'ivoire,0.146041801
+Cyprus,0
+Djibouti,0
+Egypt,0.155893683
+Gabon,0
+Gambia,0.515837582
+Guinea,0.309190689
+Guinea Bissau,0
+Guyana,0
+Indonesia,-0.122944971
+Iran,-0.190868995
+Iraq,0
+Jordan,0.222619744
+Kazakhstan,-0.588574744
+Kosovo,0
+Kuwait,0
+Kyrgyzstan,0
+Lebanon,0.570478241
+Libya,0
+Malaysia,-0.442903644
+Maldives,0
+Mali,0.484729411
+Mauritania,0.420920617
+Morocco,0.108883792
+Mozambique,0
+Niger,0.24234494
+Nigeria,0
+Oman,0
+Pakistan,-0.163028486
+Palestine,0
+Qatar,0
+Saudi Arabia,0
+Senegal,0.275915485
+Sierra Leone,0
+Somalia,0
+Sudan,0.218570315
+Suriname,0
+Syria,0
+Tajikistan,0
+Togo,0
+Tunisia,0.025230251
+Turkey,-0.103503022
+Turkmenistan,0
+U A E,0
+Uganda,0
+Uzbekistan,0.173114641
+Yemen,0
+Others,0
+Islamic Finance-Microfinance / Non-Public Financing,-0.233411905
+Islamic Finance-Microfinance / Public Financing,-0.233411905
+Profile Line of Finance,0
+Public Financing,0
+Public-Private Partnership Financing,-0.289528072
+Reverse Linkage Diagnostic/Validation Mission,-0.233411905
+"Science, Technology and Innovation",-0.233411905
+Special Assistance / Financing Community Development,-0.233411905
+Technical Assistance,-0.116457564
+Trust Funds,-0.233411905
+1977,0.501200629
+1978,0.501200629
+1979,0.501200629
+1980,0.501200629
+1981,0.501200629
+1982,0.383294074
+1983,0.383294074
+1984,0.383294074
+1985,0.805130603
+1986,0.805130603
+1987,0.318082919
+1988,0.318082919
+1989,0.436287066
+1990,0.436287066
+1991,0.384842317
+1992,0.384842317
+1993,0.259175801
+1994,0.259175801
+1995,0.51943105
+1996,0.354701479
+1997,-0.007130893
+1998,0.0920172
+1999,-0.065111008
+2000,0.147060118
+2001,-0.004528141
+2002,0.014825319
+2003,-0.278697024
+2004,-0.070346546
+2005,0.169900914
+2006,0.057395088
+2007,0.192776994
+2008,-0.00428856
+2009,0.004570006
+2010,-0.068222028
+2011,0.122856012
+2012,0.237189689
+2013,0.008783491
+2014,0
+2015,-0.007771628
+2016,-0.043502299
+2017,-0.52071086
+2018,-0.705123604
+2019,-1.23489519
+2020,-2.532308135
+2021,-3.252886787
+Approval Amount,0.243920784
+Days from Approval to Signature,0.061147684
+Ijara,0.22539094
+Inst. Sale,-0.345704981
+Inst. Sale JD,-0.345704981
+Istisnaa,-0.156404041
+Istisnaa Jed. Decl,-0.156404041
+Leasing,-0.747339429
+Sub Mode of Finance Line of Finance,-1.747640272
+Loan,0
+Loan T.A.,-0.532267814
+Murabaha,-0.906761328
+Pr. Sharing,-0.906761328
+Restricted Mudaraba,-3.566701341
+Agriculture,0
+Education,0.14367187
+Energy,0.011463279
+Finance,0.167218406
+Health and Other Social Services,0.00279228
+Industry and Mining,-0.075516757
+Information and Communications,-0.841079212
+Public Administration,-0.841079212
+Trade,-0.841079212
+Transportation,-0.258421446
+"Water, Sanitary & Urban Services",0.049243193

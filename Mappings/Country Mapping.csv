@@ -1,0 +1,61 @@
+country,region_group,country_ldmc
+Afghanistan,Others,LDMC
+Albania,Europe,LDMC
+Algeria,Others,Non-LDMC
+Azerbaijan,Others,Non-LDMC
+Bahrain,Others,Non-LDMC
+Bangladesh,Others,LDMC
+Benin,Africa,LDMC
+Brunei,Others,Non-LDMC
+Burkina Faso,Africa,LDMC
+Cameroon,Africa,Non-LDMC
+Chad,Africa,LDMC
+Comoros,Africa,LDMC
+Cote D'ivoire,Africa,Non-LDMC
+Cyprus,Europe,LDMC
+Djibouti,Africa,LDMC
+Egypt,Others,Non-LDMC
+Gabon,Africa,Non-LDMC
+Gambia,Africa,LDMC
+Guinea,Africa,LDMC
+Guinea Bissau,Africa,LDMC
+Guyana,Others,Non-LDMC
+Indonesia,Others,Non-LDMC
+Iran,Others,Non-LDMC
+Iraq,Others,Non-LDMC
+Jordan,Others,Non-LDMC
+Kazakhstan,Others,Non-LDMC
+Kosovo,Europe,Non-LDMC
+Kuwait,Others,Non-LDMC
+Kyrgyzstan,Others,LDMC
+Lebanon,Others,Non-LDMC
+Libya,Others,Non-LDMC
+Malaysia,Others,Non-LDMC
+Maldives,Others,LDMC
+Mali,Africa,LDMC
+Mauritania,Others,LDMC
+Morocco,Others,Non-LDMC
+Mozambique,Africa,LDMC
+Niger,Africa,LDMC
+Nigeria,Africa,Non-LDMC
+Oman,Others,Non-LDMC
+Pakistan,Others,Non-LDMC
+Palestine,Others,LDMC
+Qatar,Others,Non-LDMC
+Saudi Arabia,Others,Non-LDMC
+Senegal,Africa,LDMC
+Sierra Leone,Africa,LDMC
+Somalia,Africa,LDMC
+Sudan,Others,LDMC
+Suriname,Others,Non-LDMC
+Syria,Others,Non-LDMC
+Tajikistan,Others,LDMC
+Togo,Africa,LDMC
+Tunisia,Others,Non-LDMC
+Turkey,Europe,Non-LDMC
+Turkmenistan,Others,Non-LDMC
+U A E,Others,Non-LDMC
+Uganda,Africa,LDMC
+Uzbekistan,Others,Non-LDMC
+Yemen,Others,LDMC
+Others,Others,Select Catch Up/Shift

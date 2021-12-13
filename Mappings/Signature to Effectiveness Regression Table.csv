@@ -1,0 +1,113 @@
+input,value
+Intercept,4.39431523
+Adjustment Ratio,1.467237
+Sigma,0.484673856
+Afghanistan,0
+Albania,0
+Algeria,0.399903876
+Azerbaijan,0
+Bahrain,0
+Bangladesh,-0.025948917
+Benin,0.511829593
+Brunei,0
+Burkina Faso,0.90841028
+Cameroon,0.254799266
+Chad,0.634319066
+Comoros,0
+Cote D'ivoire,0.36985164
+Cyprus,0
+Djibouti,0
+Egypt,0.728023131
+Gabon,0
+Gambia,0.401033078
+Guinea,0.399825314
+Guinea Bissau,0
+Guyana,0
+Indonesia,0.1342513
+Iran,-0.192097733
+Iraq,0
+Jordan,-0.156016876
+Kazakhstan,0.293203567
+Kosovo,0
+Kuwait,0
+Kyrgyzstan,0
+Lebanon,0.737652334
+Libya,0
+Malaysia,0.36807873
+Maldives,0
+Mali,0.447581111
+Mauritania,0.715390638
+Morocco,0.269314893
+Mozambique,0
+Niger,0.646063294
+Nigeria,0
+Oman,-0.305942029
+Pakistan,-0.305020582
+Palestine,0
+Qatar,0
+Saudi Arabia,0
+Senegal,0.002103919
+Sierra Leone,-0.003166251
+Somalia,0
+Sudan,0.08253916
+Suriname,0
+Syria,0
+Tajikistan,0
+Togo,0
+Tunisia,0.641597458
+Turkey,-0.122422974
+Turkmenistan,0
+U A E,0
+Uganda,-0.265489226
+Uzbekistan,0.127586265
+Yemen,0.347479734
+Others,0
+1,-1.040624411
+2,-1.040624411
+3,-1.040624411
+4,-1.040624411
+5,-1.040624411
+6,-1.040624411
+7,-1.040624411
+8,-0.39068364
+9,-0.39068364
+10,-0.39068364
+11,-0.39068364
+12,-0.39068364
+13,0
+14,0
+15,0
+16,0
+17,0
+18,0
+19,0
+20,0
+21,0
+Approval Amount,0.04377918
+Ijara,0.102888052
+Inst. Sale,-0.182161364
+Inst. Sale JD,-0.182161364
+Istisnaa,-0.031984624
+Istisnaa Jed. Decl,-0.031984624
+Leasing,-0.579478905
+Line of Finance,-1.236679034
+Loan,0
+Loan T.A.,0.181282675
+Murabaha,-0.727912624
+Pr. Sharing,-0.727912624
+Restricted Mudaraba,-0.44568757
+Agriculture,0
+Education,-0.154174791
+Energy,0.112569121
+Finance,-0.296948107
+Health and Other Social Services,-0.199643572
+Industry and Mining,-0.256826516
+Information and Communications,-0.507066531
+Public Administration,-0.507066531
+Trade,-0.507066531
+Transportation,-0.113989305
+"Water, Sanitary & Urban Services",-0.097393205
+Low income,0
+Lower middle income,0.0569521
+Upper middle income,0.066162618
+High income,0.833144892
