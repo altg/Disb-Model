@@ -1,0 +1,62 @@
+country,country_subregion,country_ldmc
+Afghanistan,S & SE Asia,LDMC
+Albania,Europe,LDMC
+Algeria,North Africa,Non-LDMC
+Azerbaijan,CIS & Europe,Non-LDMC
+Bahrain,Middle East,Non-LDMC
+Bangladesh,S & SE Asia,LDMC
+Benin,West Africa,LDMC
+Brunei,S & SE Asia,Non-LDMC
+Burkina Faso,West Africa,LDMC
+Cameroon,East Africa,Non-LDMC
+Chad,East Africa,LDMC
+Comoros,East Africa,LDMC
+Cote D'ivoire,West Africa,Non-LDMC
+Cyprus,Europe,LDMC
+Djibouti,East Africa,LDMC
+Egypt,North Africa,Non-LDMC
+Gabon,East Africa,Non-LDMC
+Gambia,West Africa,LDMC
+Guinea,West Africa,LDMC
+Guinea Bissau,West Africa,LDMC
+Guyana,Latin America,Non-LDMC
+Indonesia,S & SE Asia,Non-LDMC
+Iran,S & SE Asia,Non-LDMC
+Iraq,Middle East,Non-LDMC
+Jordan,Middle East,Non-LDMC
+Kazakhstan,CIS & Europe,Non-LDMC
+Kosovo,Europe,Non-LDMC
+Kuwait,Middle East,Non-LDMC
+Kyrgyzstan,CIS & Europe,LDMC
+Lebanon,Middle East,Non-LDMC
+Libya,North Africa,Non-LDMC
+Malawi,East Africa,#N/A
+Malaysia,S & SE Asia,Non-LDMC
+Maldives,S & SE Asia,LDMC
+Mali,West Africa,LDMC
+Mauritania,North Africa,LDMC
+Morocco,North Africa,Non-LDMC
+Mozambique,East Africa,LDMC
+Niger,West Africa,LDMC
+Nigeria,West Africa,Non-LDMC
+Oman,Middle East,Non-LDMC
+Pakistan,S & SE Asia,Non-LDMC
+Palestine,Middle East,LDMC
+Qatar,Middle East,Non-LDMC
+Regional,West Africa,#N/A
+Saudi Arabia,Middle East,Non-LDMC
+Senegal,West Africa,LDMC
+Sierra Leone,West Africa,LDMC
+Somalia,East Africa,LDMC
+Sudan,North Africa,LDMC
+Suriname,Latin America,Non-LDMC
+Syria,Middle East,Non-LDMC
+Tajikistan,CIS & Europe,LDMC
+Togo,West Africa,LDMC
+Tunisia,North Africa,Non-LDMC
+Turkey,Europe,Non-LDMC
+Turkmenistan,CIS & Europe,Non-LDMC
+U A E,Middle East,Non-LDMC
+Uganda,East Africa,LDMC
+Uzbekistan,CIS & Europe,Non-LDMC
+Yemen,Middle East,LDMC

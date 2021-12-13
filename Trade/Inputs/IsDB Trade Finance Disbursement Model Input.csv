@@ -1,0 +1,12 @@
+project_id,project_title,country,sector,approval_amount_usd,project_type,income_classification,dealing_with_construction_permits,rate_type,revolving,evaluation_date,amount_disbursed_at_evaluation_date_usd,date_of_approval,date_of_first_disbursement,days_from_approval_to_first_disbursement_cap,date_of_first_disbursement_override,date_of_final_disbursement_override
+BD/0085,,Bangladesh,Oil & Gas,5000000,Sovereign Financing,Lower middle income,60.32979,Fixed,O,02/08/2017,,02/08/2017,,,,
+BD/0094,,Bangladesh,Oil & Gas,50000000,Sovereign Financing,Lower middle income,60.57674,Fixed,R,02/15/2018,,02/15/2018,,,,
+BD/0095,,Bangladesh,Oil & Gas,25000000,Sovereign Financing,Lower middle income,60.57674,Fixed,R,03/11/2018,,03/11/2018,,,,
+BD/0096,,Bangladesh,Oil & Gas,25000000,Sovereign Financing,Lower middle income,60.57674,Fixed,R,03/06/2018,,03/06/2018,,,,
+BD/0098,,Bangladesh,Oil & Gas,5000000,Sovereign Financing,Lower middle income,60.57674,Fixed,R,02/22/2018,,02/22/2018,,,,
+BD/0099,,Bangladesh,Oil & Gas,2500000,Sovereign Financing,Lower middle income,60.57674,Fixed,R,03/06/2018,,03/06/2018,,,,
+BD/0100,,Bangladesh,Oil & Gas,25000000,Sovereign Financing,Lower middle income,60.57674,Fixed,R,03/11/2018,,03/11/2018,,,,
+BD/0101,,Bangladesh,Financial Services,8000000,Two-Step Murabaha Financing,Lower middle income,60.57674,Floating Corresponding,R,06/25/2018,,06/25/2018,,,,
+BD/0085/2,,Bangladesh,Oil & Gas,5000000,Sovereign Financing,Lower middle income,60.32979,Fixed,O,03/08/2017,,02/08/2017,,,,
+BD/0085/3,,Bangladesh,Oil & Gas,5000000,Sovereign Financing,Lower middle income,60.32979,Fixed,O,02/08/2017,,02/08/2017,04/08/2017,,,
+BD/0085/4,,Bangladesh,Oil & Gas,5000000,Sovereign Financing,Lower middle income,60.32979,Fixed,O,04/18/2017,1500000,02/08/2017,04/08/2017,,,

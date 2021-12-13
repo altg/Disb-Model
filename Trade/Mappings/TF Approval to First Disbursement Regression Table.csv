@@ -1,0 +1,36 @@
+input,value
+Intercept,5.991735052
+Adjustment Ratio,1.149199
+Sigma,0.369151461
+CIS & Europe,-0.609784714
+East Africa,0.547002846
+Europe,-0.833454799
+Latin America,0.514561985
+Middle East,0.373329162
+North Africa,0.434949563
+West Africa,0.245111901
+S & SE Asia,0
+Bank Guarantee,0.432247057
+Credit Insured,0.198586572
+Line of Financing,0.97145851
+Sovereign Financing,0
+Two-Step Murabaha Financing,0.490691313
+Unsecured Financing,-0.374130299
+2008,0.537433206
+2009,0.201807101
+2010,0.463101196
+2011,-0.068733551
+2012,-0.068733551
+2013,-0.059677217
+2014,-0.059677217
+2015,0.356308866
+2016,0.258694181
+2017,0.258694181
+2018,0.26183366
+2019,0
+2020,0
+Dealing with Construction Permits,-0.020742478
+Low income,0.054103121
+Lower middle income,0
+Upper middle income,0.570927092
+High income,-0.652743947
