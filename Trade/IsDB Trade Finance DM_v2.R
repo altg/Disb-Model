@@ -22,14 +22,16 @@
 
 time_log <- Sys.time()
 
-repeat{     #Username input
-  username <- dlg_input("Enter Username", Sys.info()["user"])$res
-  
-  if(length(username > 0)){
-    break
-  }
-}
+# repeat{     #Username input
+#   username <- dlg_input("Enter Username", Sys.info()["user"])$res
+#   
+#   if(length(username > 0)){
+#     break
+#   }
+# }
 
+
+username <- "idb_test"
 
 hs = list() #List in which plots are stored
 hcount = 0

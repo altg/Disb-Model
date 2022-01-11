@@ -1,0 +1,30 @@
+---
+title: "Check Results"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+
+```
+
+```{r}
+
+dir <- getwd()   #Updates the path to the directory where the R Code is present
+input_dir <- paste0(dir, "/Inputs/") 
+
+output_dir <- paste0(dir , "/Outputs/")
+
+ops_data_check <- read_csv(file = paste0(input_dir, "isdb_test_prjs.csv"))
+
+# profiles <- read_csv(file = paste0(output_dir , "IsDB Projects & LoF Disbursement Modelling Profiles idb_test 11-Jan-2022 15.56.12"))
+
+profiles <- read_csv(file = "Outputs/IsDB Projects & LoF Disbursement Modelling Profiles idb_test 11-Jan-2022 15.56.12.csv")
+
+
+```

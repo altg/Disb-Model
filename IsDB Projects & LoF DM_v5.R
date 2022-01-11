@@ -6,12 +6,14 @@
   options(scipen = 999)
   setwd(dirname(rstudioapi::getSourceEditorContext()$path))
   
+  library(tidyverse)
+  
   library(data.table)   #Ignore the warning messages
-  library(ggplot2)
-  library(openxlsx)
+  #library(ggplot2)
+  #library(openxlsx)
   #library(xlsx)
-  library(plyr)
-  library(dplyr)
+  #library(plyr)
+  #library(dplyr)
   library(readxl)
   library(svDialogs)      
   library(DescTools)      
@@ -22,13 +24,16 @@
 
 time_log <- Sys.time()
 
-repeat{     #Username input
-  username <- dlg_input("Enter Username", Sys.info()["user"])$res
-  
-  if(length(username > 0)){
-    break
-  }
-}
+# repeat{     #Username input
+#   username <- dlg_input("Enter Username", Sys.info()["user"])$res
+#   
+#   if(length(username > 0)){
+#     break
+#   }
+# }
+
+
+username <- "idb_test"
 
 
 hs = list() #List in which plots are stored
@@ -53,7 +58,11 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 ### Loading Model Input File
 
-model_input <- fread(input = paste0(input_dir, "IsDB Projects & LoF Disbursement Model Input.csv"), na.strings = "", stringsAsFactors = F)
+#model_input <- fread(input = paste0(input_dir, "IsDB Projects & LoF Disbursement Model Input.csv"), na.strings = "", stringsAsFactors = F)
+
+model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"), na.strings = "", stringsAsFactors = F)
+
+#model_input <- test_data
 
 model_input$evaluation_date <- as.Date(model_input$evaluation_date, format = "%m/%d/%Y")
 model_input$date_of_approval <- as.Date(model_input$date_of_approval, format = "%m/%d/%Y")
@@ -83,8 +92,9 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 
 #### Disbursement Model ####
 
-for (id in 1:nrow(model_input)) {     #One project at a time
-  proj <- model_input[id,]
+for (id in 1:nrow(model_input)) {  #One project at a time
+    print(id)
+    proj <- model_input[id,]
   
   date_of_evaluation <- proj$evaluation_date
   amount_disb_eval_date <- proj$amount_disbursed_at_evaluation_date_usd
@@ -600,6 +610,8 @@ write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF D
 
 write.csv(x = disb_summ, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Summary", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
+
+
 
 
 # Disbursement Profile Graphs

@@ -1,0 +1,174 @@
+---
+title: "Generate Test Data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+
+```
+
+```{r}
+
+dir <- getwd()   #Updates the path to the directory where the R Code is present
+input_dir <- paste0(dir, "/Inputs/") 
+
+ops_data_in <- read_excel("Tests/idb_data.xlsx", 
+    sheet = "ops_data")
+```
+
+
+
+```{r}
+
+set.seed(678)
+
+ops_data <- ops_data_in %>% 
+  transmute(
+    project_id = operation_id,
+    project_title,
+    country,
+    sector = str_to_title(sector),
+    approval_amount_usd = approval_amt_usd,
+    profile, 
+    #rating  = rating_2020,
+    #registering_property = 0,                             
+    #government_effectiveness = 0,                        
+    sub_mode_of_finance,                             
+    income_classification = country_class,                            
+    evaluation_date = dmy("01/01/2022"),                                  
+    amount_disbursed_at_evaluation_date_usd = "",         
+    date_of_approval,                                
+    date_of_signature = "",                                
+    date_of_effectiveness = "",                            
+    date_of_first_disbursement = "",                       
+    days_from_approval_to_signature_cap = "",              
+    days_from_signature_to_effectiveness_cap = "",         
+    days_from_effectiveness_to_first_disbursement_cap = "",
+    date_of_signature_override = "",                       
+    date_of_effectiveness_override = "",                 
+    date_of_first_disbursement_override = "",              
+    date_of_final_disbursement_override= ""
+    
+  ) %>% filter( approval_amount_usd != 0 , !is.na(income_classification),
+                country != "Not Assigned") %>% 
+  mutate(
+    sector = str_replace(sector , "And" , "and"),
+    income_classification = str_to_sentence(income_classification)
+  ) %>% 
+  mutate(
+    income_classification = str_replace(income_classification , "Low middle income" , "Lower middle income")
+  )
+
+# %>% 
+#   slice_sample(n=100)
+
+
+```
+
+
+# Load indicator data
+
+
+## Governance
+```{r}
+
+hd_file <- paste0( input_dir , "Historical Data  Governance Indicators and Rating_157428296.xlsx" )
+
+gov_effect <- read_excel( hd_file, 
+    sheet = "GovernmentEffectiveness", skip = 7) %>% 
+  rename( country_territory = ...1 ,
+          country = ...2 ) %>% 
+  slice(-1) %>% 
+  select(-country_territory) %>% 
+  mutate( across(2:48 , ~as.double(.x))) %>% 
+  janitor::clean_names() 
+
+
+gov_effect <- gov_effect %>% 
+   pivot_longer(
+    cols = starts_with("x"),
+    names_to = "year",
+    values_to = "government_effectiveness"
+  ) %>% 
+  mutate( year = as.integer( str_remove(year , "x") ) )
+
+glimpse(gov_effect)
+
+```
+
+
+## Registering Property
+
+
+```{r}
+
+reg_property <- read_excel(hd_file, 
+    sheet = "Registering Property", skip = 3) %>% 
+  rename( country = ...1) %>% 
+  mutate( "2021" = `2020`) %>% 
+  pivot_longer(
+    cols = 2:48,
+    names_to = "year",
+    values_to = "registering_property"
+  ) %>% 
+  mutate( year = as.integer(year))
+
+
+reg_property %>%  glimpse()
+
+```
+
+## Ratings
+
+```{r}
+
+ratings <- read_excel(hd_file, 
+    sheet = "Rating", skip = 5) %>% 
+  rename( country = "Quarter/Country") %>% 
+  pivot_longer(
+    cols = 2:188,
+    names_to = "year_quarter",
+    values_to = "rating"
+  )
+  
+
+ratings %>%  glimpse()
+
+```
+
+
+
+```{r}
+
+test_data <- ops_data %>% 
+  mutate( year = year(date_of_approval) ) %>% 
+  left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
+  left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
+  relocate(government_effectiveness , .before = sub_mode_of_finance) %>% 
+  relocate(registering_property , .before = sub_mode_of_finance ) %>% 
+  mutate( year_quarter = paste0( year , "Q" , quarter(date_of_approval)   ) ) %>% 
+  left_join( ratings  , by = c("country" = "country", "year_quarter" = "year_quarter")  ) %>% 
+  relocate( rating , .after = profile ) %>%
+  select( -year , -year_quarter)
+
+
+test_data %>% glimpse()
+
+
+```
+
+
+```{r}
+
+write.csv(test_data %>% slice_sample(n=100), 
+          file = paste0(input_dir, "isdb_test_prjs.csv"))
+
+```
+
+
