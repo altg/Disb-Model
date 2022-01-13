@@ -1,6 +1,4 @@
-### preliminary
-
-## Start Changes
+# Disb Model - Project & LOF
 
 {
   rm(list = ls())
@@ -11,11 +9,6 @@
   library(tidyverse)
   
   library(data.table)   #Ignore the warning messages
-  #library(ggplot2)
-  #library(openxlsx)
-  #library(xlsx)
-  #library(plyr)
-  #library(dplyr)
   library(readxl)
   library(svDialogs)      
   library(DescTools)      
@@ -53,12 +46,9 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 ### Loading Model Input File
 
-#model_input <- fread(input = paste0(input_dir, "IsDB Projects & LoF Disbursement Model Input.csv"), na.strings = "", stringsAsFactors = F)
+
 
 model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"), na.strings = "", stringsAsFactors = F)
-
-#model_input <- test_data
-
 
 ## End Changes
 
@@ -90,9 +80,10 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 
 #### Disbursement Model ####
 
-for (id in 1:nrow(model_input)) {  #One project at a time
-    print(id)
-    proj <- model_input[id,]
+for (id in 1:nrow(model_input)) {     #One project at a time
+  proj <- model_input[id,]
+  
+  print( paste0( id , ":" , proj$project_title) )
   
   date_of_evaluation <- proj$evaluation_date
   amount_disb_eval_date <- proj$amount_disbursed_at_evaluation_date_usd
@@ -114,9 +105,9 @@ for (id in 1:nrow(model_input)) {  #One project at a time
       
       approval_year <- ifelse(year(date_of_approval) <= 2020, app_sig_reg[which(app_sig_reg$input == year(date_of_approval)),]$value, 
                               (app_sig_reg[which(app_sig_reg$input == 2015),]$value +
-                                   app_sig_reg[which(app_sig_reg$input == 2016),]$value +
-                                   app_sig_reg[which(app_sig_reg$input == 2017),]$value +
-                                   app_sig_reg[which(app_sig_reg$input == 2018),]$value)/4)
+                                 app_sig_reg[which(app_sig_reg$input == 2016),]$value +
+                                 app_sig_reg[which(app_sig_reg$input == 2017),]$value +
+                                 app_sig_reg[which(app_sig_reg$input == 2018),]$value)/4)
       
       reg_property <- proj$registering_property * app_sig_reg[which(app_sig_reg$input == "Registering Property"),]$value
       gov_effectiveness <- proj$government_effectiveness * app_sig_reg[which(app_sig_reg$input == "Government Effectiveness"),]$value
@@ -190,7 +181,7 @@ for (id in 1:nrow(model_input)) {  #One project at a time
       
       time_after_event <- ifelse(is.na(proj$date_of_signature), 0, 
                                  ifelse(as.numeric(date_of_evaluation - proj$date_of_signature)>0, as.numeric(date_of_evaluation - proj$date_of_signature), 0))   #Calculating time after event
-        
+      
       t <- time_after_event
       
       # Calculating remaining time
@@ -249,10 +240,10 @@ for (id in 1:nrow(model_input)) {  #One project at a time
       sector <- eff_firstdisb_reg[which(eff_firstdisb_reg$input == proj$sector),]$value
       
       effectiveness_year <- ifelse(year(date_of_effectiveness) <= 2020, eff_firstdisb_reg[which(eff_firstdisb_reg$input == year(date_of_effectiveness)),]$value, 
-                              (eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2015),]$value +
-                                 eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2016),]$value +
-                                 eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2017),]$value +
-                                 eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2018),]$value)/4)
+                                   (eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2015),]$value +
+                                      eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2016),]$value +
+                                      eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2017),]$value +
+                                      eff_firstdisb_reg[which(eff_firstdisb_reg$input == 2018),]$value)/4)
       
       approval_amount_usd <- log(proj$approval_amount_usd) * eff_firstdisb_reg[which(eff_firstdisb_reg$input == "Approval Amount"),]$value
       days_from_signature_to_effectiveness <- log(days_from_sig_to_eff) * eff_firstdisb_reg[which(eff_firstdisb_reg$input == "Days from Signature to Effectiveness"),]$value
@@ -324,10 +315,10 @@ for (id in 1:nrow(model_input)) {  #One project at a time
     sector <- first_finaldisb_reg[which(first_finaldisb_reg$input == proj$sector),]$value
     
     first_disb_year <- ifelse(year(date_of_first_disbursement) <= 2020, first_finaldisb_reg[which(first_finaldisb_reg$input == year(date_of_first_disbursement)),]$value, 
-                                 (first_finaldisb_reg[which(first_finaldisb_reg$input == 2015),]$value +
-                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2016),]$value +
-                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2017),]$value +
-                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2018),]$value)/4)
+                              (first_finaldisb_reg[which(first_finaldisb_reg$input == 2015),]$value +
+                                 first_finaldisb_reg[which(first_finaldisb_reg$input == 2016),]$value +
+                                 first_finaldisb_reg[which(first_finaldisb_reg$input == 2017),]$value +
+                                 first_finaldisb_reg[which(first_finaldisb_reg$input == 2018),]$value)/4)
     
     approval_amount_usd <- log(proj$approval_amount_usd) * first_finaldisb_reg[which(first_finaldisb_reg$input == "Approval Amount"),]$value
     days_from_approval_to_signature <- log(days_from_app_to_sig) * first_finaldisb_reg[which(first_finaldisb_reg$input == "Days from Approval to Signature"),]$value
@@ -347,7 +338,7 @@ for (id in 1:nrow(model_input)) {  #One project at a time
     sec_group <- sector_mapping$sector_group[match(proj$sector, sector_mapping$sector)]     #Sector group
     coun_ldmc <- country_mapping$country_ldmc[match(proj$country, country_mapping$country)]     #Country LDMC
     profile <- paste0(reg_group, ", ", sec_group)     #Profile
-      
+    
     catchup_shift <- ifelse(tolower(proj$country) == "others", dlg_input(message = "Catch Up/Shift", default = "Catch Up", gui = .GUI)$res,
                             ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", 
                                    ifelse(tolower(coun_ldmc) == "ldmc", "Shift", "Catch Up")))     #Catch Up/Shift
@@ -391,7 +382,7 @@ for (id in 1:nrow(model_input)) {  #One project at a time
     
     disb_profile$days_from_first_disb <- round(disb_profile$std_tenor * days_from_first_to_finaldisb,0)     #Days from First Disbursement
     disb_profile$date_of_disbursement <- disb_profile$days_from_first_disb + date_of_first_disbursement     #Date of Disbursement
-    disb_profile$cum_amount_disbursed <- disb_profile$perc_disbursed * proj$approval_amount_usd       #Cumulative Amount Disbursed
+    disb_profile$cum_amount_disbursed <- (disb_profile$perc_disbursed/100) * proj$approval_amount_usd       #Cumulative Amount Disbursed
     
     for (i in 1:nrow(disb_profile)) {       #Amount Disbursed between Tenors
       if (i == 1) {
@@ -434,7 +425,7 @@ for (id in 1:nrow(model_input)) {  #One project at a time
     
     disb_profile$days_from_first_disb <- round(disb_profile$std_tenor * days_from_first_to_finaldisb,0)     #Days from First Disbursement
     disb_profile$date_of_disbursement <- disb_profile$days_from_first_disb + date_of_first_disbursement     #Date of Disbursement
-    disb_profile$cum_amount_disbursed <- disb_profile$perc_disbursed * proj$approval_amount_usd       #Cumulative Amount Disbursed
+    disb_profile$cum_amount_disbursed <- (disb_profile$perc_disbursed/100) * proj$approval_amount_usd       #Cumulative Amount Disbursed
     
     for (i in 1:nrow(disb_profile)) {       #Amount Disbursed between Tenors
       if (i == 1) {
@@ -481,7 +472,7 @@ for (id in 1:nrow(model_input)) {  #One project at a time
     colnames(disb_profile)[3] <- "perc_disbursed"
     
     disb_profile$date_of_disbursement <- disb_profile$days_from_first_disb + date_of_first_disbursement     #Date of Disbursement
-    disb_profile$cum_amount_disbursed <- disb_profile$perc_disbursed * proj$approval_amount_usd       #Cumulative Amount Disbursed
+    disb_profile$cum_amount_disbursed <- (disb_profile$perc_disbursed/100) * proj$approval_amount_usd       #Cumulative Amount Disbursed
     
     for (i in 1:nrow(disb_profile)) {       #Amount Disbursed between Tenors
       if (i == 1) {
@@ -538,7 +529,7 @@ for (id in 1:nrow(model_input)) {  #One project at a time
 
 ### Disbursement Profile Summary
 
-time_gap <- 30        #Time Interval Duration for Disbursement Summary
+time_gap <- 90        #Time Interval Duration for Disbursement Summary
 
 summ_time_points <- seq(0, RoundTo(x = as.numeric(max(model_output$date_of_final_disbursement) - model_input$evaluation_date[1]), multiple = time_gap, FUN = ceiling), time_gap)
 
@@ -559,6 +550,8 @@ for (z in 1 : (length(summ_time_points) - 1)) {
   
 }
 
+
+disb_summ$interval <- factor(disb_summ$interval, levels = disb_summ$interval)
 
 
 disb_profile_plot <- ggplot(disb_summ, aes(interval, amount)) +
@@ -597,19 +590,20 @@ colnames(model_output) <- c("Project ID", "Project Title", "Approval Amount (USD
 write.csv(x = model_output, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
+saveRDS(model_output , file = paste0(output_dir , "model_output.rda"))
 
 # Disbursement Profiles
 
 write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
+saveRDS(full_disb_profile , file = paste0(output_dir , "full_disb_profile.rda"))
+
 
 # Disbursement Summary
 
 write.csv(x = disb_summ, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Summary", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
-
-
 
 
 # Disbursement Profile Graphs

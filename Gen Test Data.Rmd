@@ -26,6 +26,8 @@ ops_data_in <- read_excel("Tests/idb_data.xlsx",
 
 ```{r}
 
+eval_date <- dmy("01-01-2022")
+
 set.seed(678)
 
 ops_data <- ops_data_in %>% 
@@ -41,7 +43,7 @@ ops_data <- ops_data_in %>%
     #government_effectiveness = 0,                        
     sub_mode_of_finance,                             
     income_classification = country_class,                            
-    evaluation_date = dmy("01/01/2022"),                                  
+    evaluation_date = eval_date,                                  
     amount_disbursed_at_evaluation_date_usd = "",         
     date_of_approval,                                
     date_of_signature = "",                                
@@ -166,7 +168,9 @@ test_data %>% glimpse()
 
 ```{r}
 
-write.csv(test_data %>% slice_sample(n=100), 
+write.csv(test_data %>% 
+            filter( year(date_of_approval) > 2016 ) %>% 
+            slice_sample(n=100), 
           file = paste0(input_dir, "isdb_test_prjs.csv"))
 
 ```
