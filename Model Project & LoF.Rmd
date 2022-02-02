@@ -1,29 +1,34 @@
-# Disb Model - Project & LOF
+---
+title: "Disb Model - Project & LOF"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
 
-{
-  rm(list = ls())
-  options(java.parameters = "-Xmx32g" )
-  options(scipen = 999)
-  setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-  
-  library(tidyverse)
-  
-  library(data.table)   #Ignore the warning messages
-  library(readxl)
-  library(svDialogs)      
-  library(DescTools)      
-  #library(ExcelFunctionsR)
-  
-  theme_set(theme_bw(base_size = 12))
-}
+```{r}
+library(tidyverse)
+#library(lubridate)
+library(data.table)
+library(readxl)
+library(svDialogs)  
+library(DescTools) 
 
-time_log <- Sys.time()
+```
 
 
+```{r}
+options(java.parameters = "-Xmx32g" )
+options(scipen = 999)
+
+theme_set(theme_bw(base_size = 12))
 
 username <- "idb_test"
 
+time_log <- Sys.time()
+```
 
+### Setup env
+```{r}
 hs = list() #List in which plots are stored
 hcount = 0
 
@@ -32,26 +37,28 @@ fdcount = 0
 
 model_output <- {}      #To store Model Outputs of all projects
 full_disb_profile <- {}     #To store Disbursement Profiles of all projects
-
+```
 
 
 ### Setting directories
+```{r}
 
-dir <- dirname(rstudioapi::getSourceEditorContext()$path)   #Updates the path to the directory where the R Code is present
+dir <- getwd()   #Updates the path to the directory where the R Code is present
 input_dir <- paste0(dir, "/Inputs/")                        #Setting the path to the directory where the input files are present
 output_dir <- paste0(dir, "/Outputs/")                      #Setting the path to the directory where the output files will be written
 mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to the directory where the mapping files are present
 
+```
 
 
 ### Loading Model Input File
-
-
-
+```{r}
 model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"), na.strings = "", stringsAsFactors = F)
 
-## End Changes
+```
 
+
+```{r}
 model_input$evaluation_date <- as.Date(model_input$evaluation_date, format = "%m/%d/%Y")
 model_input$date_of_approval <- as.Date(model_input$date_of_approval, format = "%m/%d/%Y")
 model_input$date_of_signature <- as.Date(model_input$date_of_signature, format = "%m/%d/%Y")
@@ -62,10 +69,12 @@ model_input$date_of_first_disbursement <- as.Date(model_input$date_of_first_disb
 model_input$date_of_first_disbursement_override <- as.Date(model_input$date_of_first_disbursement_override, format = "%m/%d/%Y")
 model_input$date_of_final_disbursement_override <- as.Date(model_input$date_of_final_disbursement_override, format = "%m/%d/%Y")
 
+```
 
 
 ### Loading Regression Table & Mapping Files
 
+```{r}
 app_sig_reg <- fread(input = paste0(mappings_dir, "Approval to Signature Regression Table.csv"), na.strings = "", stringsAsFactors = F)
 sig_eff_reg <- fread(input = paste0(mappings_dir, "Signature to Effectiveness Regression Table.csv"), na.strings = "", stringsAsFactors = F)
 eff_firstdisb_reg <- fread(input = paste0(mappings_dir, "Effectiveness to First Disbursement Regression Table.csv"), na.strings = "", stringsAsFactors = F)
@@ -75,15 +84,19 @@ country_mapping <- fread(input = paste0(mappings_dir, "Country Mapping.csv"), na
 sector_mapping <- fread(input = paste0(mappings_dir, "Sector Mapping.csv"), na.strings = "", stringsAsFactors = F)
 disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile Mapping.csv"), na.strings = "", stringsAsFactors = F, header = T)
 
-
+```
 
 
 #### Disbursement Model ####
+```{r}
+
 
 for (id in 1:nrow(model_input)) {     #One project at a time
   proj <- model_input[id,]
   
   #print( paste0( id , ":" , proj$project_title) )
+  
+  #proj$project_title
   
   date_of_evaluation <- proj$evaluation_date
   amount_disb_eval_date <- proj$amount_disbursed_at_evaluation_date_usd
@@ -524,11 +537,12 @@ for (id in 1:nrow(model_input)) {     #One project at a time
                                                  date_of_final_disbursement))
   
 }
-
+```
 
 
 ### Disbursement Profile Summary
 
+```{r}
 time_gap <- 90        #Time Interval Duration for Disbursement Summary
 
 summ_time_points <- seq(0, RoundTo(x = as.numeric(max(model_output$date_of_final_disbursement) - model_input$evaluation_date[1]), multiple = time_gap, FUN = ceiling), time_gap)
@@ -581,44 +595,44 @@ colnames(model_output) <- c("Project ID", "Project Title", "Approval Amount (USD
                             "Date of Final Disbursement")
 
 
+```
 
+# Writing Output Files
 
-### Writing Output Files
-
-# Model Outputs
-
+## Model Outputs
+```{r}
 write.csv(x = model_output, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
 saveRDS(model_output , file = paste0(output_dir , "model_output.rda"))
+```
 
-# Disbursement Profiles
+## Disbursement Profiles
 
+```{r}
 write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
 saveRDS(full_disb_profile , file = paste0(output_dir , "full_disb_profile.rda"))
+```
 
+## Disbursement Summary
 
-# Disbursement Summary
-
+```{r}
 write.csv(x = disb_summ, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Summary", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
+```
+
+## Disbursement Profile Graphs
 
 
-# Disbursement Profile Graphs
-
+```{r}
 pdf(paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Graphs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".pdf"), height = 11, width = 14) # pdf file to be written to
 for (i in seq(length(fd)))
   print(replayPlot(fd[[i]])) # loop over plots and write to pdf
 for (i in seq(length(hs)))
   print(replayPlot(hs[[i]])) # loop over plots and write to pdf
 graphics.off()
-
-
-
-
-
-
+```
 
 

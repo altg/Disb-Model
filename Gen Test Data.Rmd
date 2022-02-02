@@ -13,13 +13,24 @@ library(readxl)
 
 ```
 
-```{r}
+```{r envparam}
 
 dir <- getwd()   #Updates the path to the directory where the R Code is present
 input_dir <- paste0(dir, "/Inputs/") 
 
 ops_data_in <- read_excel("Tests/idb_data.xlsx", 
     sheet = "ops_data")
+```
+
+
+
+
+```{r globalparam}
+start_date <- dmy("01/01/2020")
+
+end_date <- dmy("01/01/2023")
+
+sample_size <- 10
 ```
 
 ```{r}
@@ -224,14 +235,7 @@ test_data %>% glimpse()
 # Not Signed Projects
 
 ```{r}
-
-start_date <- dmy("01/01/2020")
-
-end_date <- dmy("01/01/2023")
-
 set.seed(567)
-
-sample_size <- 100
 
 base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
 
