@@ -54,14 +54,14 @@ profiles %>%  summarise( total_disb = sum( amount_disbursed_between_tenors ) /1e
 
 ```{r}
 
-eval_date <- dmy("01-01-2022")
+#eval_date <- dmy("01-01-2022")
 
 bins <- seq(0, 14400 , 180)
 
 theme_set(theme_minimal())
 
 profiles <- profiles %>% 
-    mutate( days_from_eval = time_length(date_of_disbursement - eval_date , "day"), 
+    mutate( days_from_eval = time_length(date_of_disbursement - evaluation_day , "day"), 
     days_bin  = cut(days_from_eval , bins , include.lowest = TRUE)) 
 
 profiles %>% 
@@ -70,44 +70,53 @@ profiles %>%
 
 ```
 
+# Plot data
 
 ```{r}
-
 library(patchwork)
 
 
-plot_hist <- function(var){
+plot_hist <- function(data_src , var){
   
   mean_val = mean(var)
   
-  var_name = str_remove( deparse(substitute(var)) , "model_output\\$days_from_" )
+  var_name = str_remove( deparse(substitute(var)) , ".*\\$days_from_" )
   
-  
+  #geom_histogram(aes(y=..density.. , fill = ), fill="lightblue")+
 
   
-  model_output %>% 
+  data_src %>% 
   ggplot(aes(var)) +
-  geom_histogram(aes(y=..density..), fill="lightblue")+
+  geom_histogram(aes(y=..density.. , fill = catch_up_shift ) )+
   geom_density(alpha=.2, fill="#FF6666") +
   geom_vline(aes(xintercept= mean_val),
             color="black", linetype="dashed", size=.5 , alpha = .5) +
-  annotate("text" , x = mean_val , y  = 0 , label = paste0(mean_val)) +
+  annotate("text" , x = mean_val , y  = 0 , label = paste0(sprintf("%.2f",mean_val))) +
   labs(title = var_name)
   
 }
+```
 
 
 
-p1 <- plot_hist(model_output$days_from_approval_to_signature)
+# Not Signed Projects
+
+```{r}
+
+
+data_in <- model_output %>% 
+  filter(str_detect( project_title, "Not Signed" ) )
+
+p1 <- plot_hist(data_in , data_in$days_from_approval_to_signature)
   
   
-p2 <- plot_hist(model_output$days_from_signature_to_effectiveness)
+p2 <- plot_hist(data_in , data_in$days_from_signature_to_effectiveness)
 
 
-p3 <- plot_hist(model_output$days_from_effectiveness_to_first_disbursement)
+p3 <- plot_hist(data_in , data_in$days_from_effectiveness_to_first_disbursement)
   
   
-p4 <- plot_hist(model_output$days_from_first_to_final_disbursement)
+p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
   
  
 
@@ -115,4 +124,27 @@ p4 <- plot_hist(model_output$days_from_first_to_final_disbursement)
 
 ```
 
+# Not Effective Projects
 
+```{r}
+
+
+data_in <- model_output %>% 
+  filter(str_detect( project_title, "Not Effective" ) )
+
+#p1 <- plot_hist(data_in , data_in$days_from_approval_to_signature)
+  
+  
+p2 <- plot_hist(data_in , data_in$days_from_signature_to_effectiveness)
+
+
+p3 <- plot_hist(data_in , data_in$days_from_effectiveness_to_first_disbursement)
+  
+  
+p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
+  
+ 
+
+(p2 | p3) / (p4)
+
+```

@@ -83,7 +83,7 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 for (id in 1:nrow(model_input)) {     #One project at a time
   proj <- model_input[id,]
   
-  print( paste0( id , ":" , proj$project_title) )
+  #print( paste0( id , ":" , proj$project_title) )
   
   date_of_evaluation <- proj$evaluation_date
   amount_disb_eval_date <- proj$amount_disbursed_at_evaluation_date_usd

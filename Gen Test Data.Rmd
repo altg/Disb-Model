@@ -25,7 +25,9 @@ ops_data_in <- read_excel("Tests/idb_data.xlsx",
 ```{r}
 
 profiles <- ops_data_in %>% 
-  distinct(profile)
+  group_by(profile) %>% 
+  summarise( n = n() ) %>% 
+  mutate( freq = n/sum(n))
 
 countries <- ops_data_in %>% 
   distinct(country , country_class) %>% 
@@ -34,7 +36,8 @@ countries <- ops_data_in %>%
   ) %>% 
   mutate(
     income_classification = str_replace(income_classification , "Low middle income" , "Lower middle income") ) %>% 
-  select( -country_class)
+  select( -country_class) %>% 
+  filter(country != "Not Assigned")
 
 sectors <-  ops_data_in %>% 
   distinct(sector) %>% 
@@ -68,11 +71,11 @@ ops_data <- ops_data_in %>%
     sub_mode_of_finance,                             
     #income_classification = country_class,                            
     evaluation_date = eval_date,                                  
-    amount_disbursed_at_evaluation_date_usd = "",         
+    amount_disbursed_at_evaluation_date_usd = NA,         
     date_of_approval,                                
     date_of_signature = NA,                                
-    date_of_effectiveness = "",                            
-    date_of_first_disbursement = "",                       
+    date_of_effectiveness = NA,                            
+    date_of_first_disbursement = NA,                       
     days_from_approval_to_signature_cap = "",              
     days_from_signature_to_effectiveness_cap = "",         
     days_from_effectiveness_to_first_disbursement_cap = "",
@@ -103,9 +106,9 @@ s_countries <- sample( countries$country , size = rows , replace = T)
 s_sectors <-  sample( sectors$sector , size = rows , replace = T)
 
 
-t <- profiles[c(1,3),]$profile
+#t <- profiles[c(1,3),]$profile
 
-s_profile <- sample(t, size = rows, replace = T  , prob = c( 0.8 , 0.2))
+s_profile <- sample(profiles$profile, size = rows, replace = T  , prob = profiles$freq )
 
 
 ops_data_out <-  ops_data %>% 
@@ -195,7 +198,7 @@ ratings %>%  glimpse()
 
 ```
 
-
+# Merge additional data with the main data
 
 ```{r}
 
@@ -218,22 +221,40 @@ test_data %>% glimpse()
 
 ```
 
+# Not Signed Projects
+
 ```{r}
 
-eval_date <- dmy("01/01/2020")
+start_date <- dmy("01/01/2020")
 
-sample_size <- 10
+end_date <- dmy("01/01/2023")
+
+set.seed(567)
+
+sample_size <- 100
+
+base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
+
+apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+
 
 set.seed(234)
 
 test_data_sig <- 
-  ops_data_out %>% 
+  test_data %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
     project_title_org = project_title,
     project_title = paste0( "Not Signed-", formatC(row_number(), width=3, flag="0") ),
-    evaluation_date = eval_date,
-    date_of_approval = evaluation_date
+    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
+    evaluation_date = date_of_approval  %m+% eval_offset_m + eval_offset_d
   )
 
 
@@ -241,22 +262,37 @@ test_data_in <- test_data_sig
 
 ```
 
+# Signed Not Effective Projects
+
 ```{r}
 
+set.seed(789)
 
-sig_offset_m <- months(sample( seq(1,12) , size = sample_size))
+base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
 
-sig_offset_d <- sample( seq(1:30) , size = sample_size)
+apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+sig_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+sig_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
 
 test_data_eff <- 
-  ops_data_out %>% 
+  test_data %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
     project_title_org = project_title,
     project_title = paste0( "Not Effective-", formatC(row_number(), width=3, flag="0") ),
     evaluation_date = eval_date,
-    date_of_approval = evaluation_date,
-    date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d
+    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
+    date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d,
+    evaluation_date = date_of_signature  %m+% eval_offset_m + eval_offset_d
   )
 
 test_data_in <- 
@@ -267,24 +303,118 @@ test_data_in <-
 ```
 
 
+# Effective but not disbursing projects
+
 ```{r}
-test_data <- test_data_int %>% 
-  mutate( year = year(date_of_approval) ) %>% 
-  left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
-  left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
-  relocate(government_effectiveness , .before = sub_mode_of_finance) %>% 
-  relocate(registering_property , .before = sub_mode_of_finance ) %>% 
-  mutate( year_quarter = paste0( year , "Q" , quarter(date_of_approval)   ) ) %>% 
-  left_join( ratings  , by = c("country" = "country", "year_quarter" = "year_quarter")  ) %>% 
-  relocate( rating , .after = profile ) %>%
-  select( -year , -year_quarter)
+set.seed(1234)
+
+base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
+
+apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+sig_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+sig_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eff_offset_m <- months(sample( seq(1,12) , size = sample_size, replace = T))
+
+eff_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
+
+test_data_fstd <- 
+  test_data %>% 
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_title_org = project_title,
+    project_title = paste0( "Not Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    evaluation_date = eval_date,
+    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
+    date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d,
+    date_of_effectiveness = date_of_signature %m+% eff_offset_m + eff_offset_d,
+    evaluation_date = date_of_effectiveness  %m+% eval_offset_m + eval_offset_d
+  )
+
+test_data_in <- 
+  test_data_in %>% 
+  bind_rows(test_data_fstd)
+
+
+```
+
+# Disbursing Projects
+
+```{r}
+
+set.seed(5467)
+
+base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
+
+apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+sig_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+sig_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eff_offset_m <- months(sample( seq(1,12) , size = sample_size, replace = T))
+
+eff_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
+
+fstd_offset_m <- months(sample( seq(1,12) , size = sample_size, replace = T))
+
+fstd_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
+
+pct_disb <- sample( seq(0,1,0.0125) , size = sample_size, replace = T)
+
+test_data_lstd <- 
+  test_data %>% 
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_title_org = project_title,
+    project_title = paste0( "Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
+    date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d,
+    date_of_effectiveness = date_of_signature %m+% eff_offset_m + eff_offset_d,
+    date_of_first_disbursement = date_of_effectiveness %m+% fstd_offset_m + fstd_offset_d,
+    evaluation_date = date_of_first_disbursement  %m+% eval_offset_m + eval_offset_d,
+    amount_disbursed_at_evaluation_date_usd = approval_amount_usd * pct_disb
+  )
+
+test_data_in <- 
+  test_data_in %>% 
+  bind_rows(test_data_lstd) %>% 
+  mutate(amount_disbursed_at_evaluation_date_usd = replace_na(amount_disbursed_at_evaluation_date_usd , 0))
+
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+test_data_in %>% select(project_id, project_title , date_of_approval , date_of_signature, date_of_effectiveness, date_of_first_disbursement) %>% view()
+
+
+
+test_data_in %>% view()
+
+
 ```
 
 
 
+
 ```{r}
 
-write.csv(test_data %>% 
+write.csv(test_data_in %>% 
             filter( year(date_of_approval) > 2016 ) %>% 
             slice_sample(n=100), 
           file = paste0(input_dir, "isdb_test_prjs.csv"))
