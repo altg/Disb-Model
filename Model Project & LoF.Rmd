@@ -51,7 +51,7 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 ```
 
 
-### Loading Model Input File
+## Loading Model Input File
 ```{r}
 model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"), na.strings = "", stringsAsFactors = F)
 
@@ -72,7 +72,7 @@ model_input$date_of_final_disbursement_override <- as.Date(model_input$date_of_f
 ```
 
 
-### Loading Regression Table & Mapping Files
+## Loading Regression Table & Mapping Files
 
 ```{r}
 app_sig_reg <- fread(input = paste0(mappings_dir, "Approval to Signature Regression Table.csv"), na.strings = "", stringsAsFactors = F)
@@ -87,7 +87,7 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 ```
 
 
-#### Disbursement Model ####
+# Disbursement Model 
 ```{r}
 
 

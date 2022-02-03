@@ -1,5 +1,5 @@
 ---
-title: "Generate Test Data"
+title: "Generate Project Test Data"
 output: html_notebook
 editor_options: 
   chunk_output_type: console
@@ -13,6 +13,7 @@ library(readxl)
 
 ```
 
+
 ```{r envparam}
 
 dir <- getwd()   #Updates the path to the directory where the R Code is present
@@ -20,9 +21,10 @@ input_dir <- paste0(dir, "/Inputs/")
 
 ops_data_in <- read_excel("Tests/idb_data.xlsx", 
     sheet = "ops_data")
+
+
+
 ```
-
-
 
 
 ```{r globalparam}
@@ -32,6 +34,8 @@ end_date <- dmy("01/01/2023")
 
 sample_size <- 10
 ```
+
+
 
 ```{r}
 
@@ -209,28 +213,14 @@ ratings %>%  glimpse()
 
 ```
 
-# Merge additional data with the main data
+
 
 ```{r}
-
-test_data <- ops_data_out %>% 
-  left_join(countries , by = c ("country" = "country")) %>% 
-  relocate( income_classification , .after = sub_mode_of_finance ) %>% 
-  mutate( year = year(date_of_approval) ) %>% 
-  left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
-  left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
-  relocate(government_effectiveness , .before = sub_mode_of_finance) %>% 
-  relocate(registering_property , .before = sub_mode_of_finance ) %>% 
-  mutate( year_quarter = paste0( year , "Q" , quarter(date_of_approval)   ) ) %>% 
-  left_join( ratings  , by = c("country" = "country", "year_quarter" = "year_quarter")  ) %>% 
-  relocate( rating , .after = profile ) %>%
-  select( -year , -year_quarter)
-
-
-test_data %>% glimpse()
-
-
+test_data <- ops_data_out
 ```
+
+
+
 
 # Not Signed Projects
 
@@ -401,6 +391,35 @@ test_data_in <-
 
 
 ```
+
+# Merge additional data with the main data
+
+```{r}
+
+test_data_in <- test_data_in %>% 
+  left_join(countries , by = c ("country" = "country")) %>% 
+  relocate( income_classification , .after = sub_mode_of_finance ) %>% 
+  mutate( year = case_when( 
+    year(date_of_approval) > 2021 ~ 2021,
+    TRUE ~ year(date_of_approval) ) ) %>% 
+  left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
+  left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
+  relocate(government_effectiveness , .before = sub_mode_of_finance) %>% 
+  relocate(registering_property , .before = sub_mode_of_finance ) %>% 
+  mutate( year_quarter = case_when(
+    year == 2021 & quarter(date_of_approval) == 4 ~ paste0( year , "Q3" ),
+    year == 2021 ~ paste0( 2021 , "Q3" ),
+    TRUE ~ paste0( year , "Q" , quarter(date_of_approval)   ) ) ) %>% 
+  left_join( ratings  , by = c("country" = "country", "year_quarter" = "year_quarter")  ) %>% 
+  relocate( rating , .after = profile ) %>%
+  select( -year , -year_quarter)
+
+
+test_data_in %>% glimpse()
+
+
+```
+
 
 
 ```{r eval=FALSE, include=FALSE}

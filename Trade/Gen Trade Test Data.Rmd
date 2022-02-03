@@ -1,0 +1,266 @@
+---
+title: "Generate Project Test Data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+
+```
+
+```{r envparam}
+
+dir <- getwd()   #Updates the path to the directory where the R Code is present
+input_dir <- paste0(dir, "/Inputs/") 
+
+```
+
+
+```{r loaddata}
+
+trade_data_in <- read_excel("Tests/idb_trade_data.xlsx", 
+    sheet = "trade_data")
+
+countries_in <- readRDS("countries.RDS")
+
+countries_in <- countries_in %>% 
+  add_row(country = "Kenya" , income_classification = "Lower middle income" ) %>% 
+  add_row(country = "Malawi" , income_classification = "Low income" )
+
+trade_data_in <- trade_data_in %>% 
+  left_join(countries_in , by = c("country")) %>% 
+  filter(country != "Regional")
+
+```
+
+
+
+
+```{r globalparam}
+start_date <- dmy("01/01/2020")
+
+end_date <- dmy("01/01/2023")
+
+sample_size <- 10
+```
+
+
+```{r}
+security <- trade_data_in %>% 
+  group_by(security_type) %>% 
+  summarise( n = n() ) %>% 
+  mutate( freq = n/sum(n))
+
+
+sectors <- trade_data_in %>% 
+  filter( sector != "N/A") %>% 
+  group_by(sector) %>% 
+  summarise( n = n() ) %>% 
+  mutate( freq = n/sum(n),
+          sector = str_replace(sector , "Financial Servc" , "Financial Services" ),
+          sector = str_replace(sector , "Food & Agricult" , "Food & Agriculture" )
+  )
+
+rate_types  <- trade_data_in %>% 
+  group_by(rate_description) %>% 
+  summarise( n = n() ) %>%
+  mutate( freq = n/sum(n))
+
+
+revolving  <- trade_data_in %>% 
+  group_by(revolving_oneoff) %>% 
+  summarise( n = n() ) %>%
+  mutate( freq = n/sum(n))
+
+
+project_types <- trade_data_in %>% 
+  group_by(project_type) %>% 
+  summarise( n = n() ) %>%
+  mutate( freq = n/sum(n))
+  
+
+
+countries <- trade_data_in %>% 
+  distinct(country , income_classification) 
+
+```
+
+
+```{r}
+rows <-  nrow(trade_data_in)
+
+s_countries <- sample( countries$country , size = rows , replace = T)
+
+trade_data <- 
+  trade_data_in %>% 
+  transmute(
+    project_id = operation_id,                                 
+    project_title = NA,                               
+    country = s_countries,                                     
+    sector  = sector,                                      
+    approval_amount_usd = idb_approval_amt_usd,                         
+    project_type = project_type,                               
+    #income_classification =  NA,                     
+    #dealing_with_construction_permits = NA,           
+    rate_type = rate_type,                                  
+    revolving = revolving_oneoff,                                  
+    evaluation_date = NA,                             
+    amount_disbursed_at_evaluation_date_usd = NA,   
+    date_of_approval = date_of_approval,                            
+    date_of_first_disbursement = NA,                 
+    days_from_approval_to_first_disbursement_cap = NA,
+    date_of_first_disbursement_override = NA,         
+    date_of_final_disbursement_override = NA
+  ) %>% 
+  left_join(countries , by = c ("country" = "country")) %>% 
+  relocate( income_classification , .after = project_type ) 
+
+```
+
+
+```{r}
+hdfile <- "../Inputs/Historical Data  Governance Indicators and Rating_157428296.xlsx"
+
+dealing_with_cp <- read_excel(hdfile, 
+    sheet = "DealingWithCPs", skip = 3) %>% 
+  rename( country = ...1 ) %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    cols = starts_with("x"),
+    names_to = "year",
+    values_to = "dealing_with_construction_permits"
+  ) %>% 
+  mutate( year = as.integer( str_remove(year , "x") ) )
+
+```
+
+# Approved not Disbursing
+
+```{r}
+set.seed(5467)
+
+base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
+
+apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+s_sectors <-  sample( sectors$sector , size = sample_size , replace = T )
+
+s_rate_types <- sample( rate_types$rate_description , size = sample_size , replace = T , prob = rate_types$freq )
+
+s_revolving <- sample( revolving$revolving_oneoff , size = sample_size , replace = T , prob = revolving$freq )
+
+s_project_types <- sample( project_types$project_type , size = sample_size , replace = T , prob = project_types$freq )
+
+trade_data_fstd <- 
+  trade_data %>% 
+  slice_sample(n = sample_size) %>%
+  mutate(
+    project_title = paste0( "Not Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
+    evaluation_date = date_of_approval  %m+% eval_offset_m + eval_offset_d
+  ) %>% 
+  mutate(
+    sector = s_sectors,
+    rate_type = s_rate_types,
+    revolving = s_revolving,
+    project_type = s_project_types
+  )
+
+trade_data_out <- trade_data_fstd
+
+```
+
+
+
+
+# Disbursing Projects
+
+
+```{r}
+set.seed(5467)
+
+base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
+
+apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
+
+eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
+
+fstd_offset_m <- months(sample( seq(1,12) , size = sample_size, replace = T))
+
+fstd_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
+
+pct_disb <- sample( seq(0,1,0.0125) , size = sample_size, replace = T)
+
+s_sectors <-  sample( sectors$sector , size = sample_size , replace = T )
+
+s_rate_types <- sample( rate_types$rate_description , size = sample_size , replace = T , prob = rate_types$freq )
+
+s_revolving <- sample( revolving$revolving_oneoff , size = sample_size , replace = T , prob = revolving$freq )
+
+s_project_types <- sample( project_types$project_type , size = sample_size , replace = T , prob = project_types$freq )
+
+
+
+trade_data_lstd <- 
+  trade_data %>% 
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_title = paste0( "Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
+    date_of_first_disbursement = date_of_approval %m+% fstd_offset_m + fstd_offset_d,
+    evaluation_date = date_of_first_disbursement  %m+% eval_offset_m + eval_offset_d,
+    amount_disbursed_at_evaluation_date_usd = approval_amount_usd * pct_disb
+  ) %>% 
+  mutate(
+    sector = s_sectors,
+    rate_type = s_rate_types,
+    revolving = s_revolving,
+    project_type = s_project_types
+  )
+
+trade_data_out <- 
+  trade_data_out %>% 
+  bind_rows(trade_data_lstd) %>% 
+  mutate(amount_disbursed_at_evaluation_date_usd = replace_na(amount_disbursed_at_evaluation_date_usd , 0))
+```
+
+
+
+```{r}
+
+set.seed(2345)
+
+
+trade_data_out <- trade_data_out %>% 
+  mutate( 
+    year = case_when( year(date_of_approval) > 2020 ~ 2020,
+    TRUE ~ year(date_of_approval) ) ) %>% 
+  left_join( dealing_with_cp , by = c("country" = "country", "year" = "year") ) %>% 
+  relocate( dealing_with_construction_permits , .before = rate_type ) %>% 
+  select(-year)
+  
+
+```
+
+# Write data to file
+```{r}
+
+write.csv(trade_data_out, 
+          file = paste0(input_dir, "isdb_test_trade.csv"))
+
+```
