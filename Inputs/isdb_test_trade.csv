@@ -1,0 +1,21 @@
+"","project_id","project_title","country","sector","approval_amount_usd","project_type","income_classification","dealing_with_construction_permits","rate_type","revolving","evaluation_date","amount_disbursed_at_evaluation_date_usd","date_of_approval","date_of_first_disbursement","days_from_approval_to_first_disbursement_cap","date_of_first_disbursement_override","date_of_final_disbursement_override"
+"1","COM/0204","Not Disbursing-001","Uganda","Power & Utility",3414911.78144565,"Line of Financing","Low income",66.44736,"Floating Specification","R",2023-10-28,0,2023-04-08,NA,NA,NA,NA
+"2","CM/0004","Not Disbursing-002","Niger","Mining & Metals",18000005.5384632,"Sovereign Financing","Low income",44.14601,"Fixed","R",2021-07-19,0,2020-06-28,NA,NA,NA,NA
+"3","UZB/0206","Not Disbursing-003","Uganda","Mining & Metals",5e+06,"Line of Financing","Low income",66.44736,"Fixed","O",2020-11-30,0,2020-09-01,NA,NA,NA,NA
+"4","IRN/0026","Not Disbursing-004","Tunisia","Mining & Metals",1.5e+07,"Two-Step Murabaha Financing","Upper middle income",77.37795,"Floating Corresponding","O",2022-05-19,0,2022-04-02,NA,NA,NA,NA
+"5","KGZ/00201","Not Disbursing-005","Togo","Real Estate",1e+06,"Sovereign Financing","Low income",64.11985,"Fixed","O",2022-08-27,0,2022-01-05,NA,NA,NA,NA
+"6","TO/0002","Not Disbursing-006","Lebanon","Health Care",1.5e+07,"Sovereign Financing","Upper middle income",53.71731,"Floating Specification","O",2023-08-22,0,2022-11-13,NA,NA,NA,NA
+"7","BEN/0003","Not Disbursing-007","Djibouti","Real Estate",1.5e+07,"Sovereign Financing","Lower middle income",69.40436,"Fixed","R",2022-04-19,0,2022-01-17,NA,NA,NA,NA
+"8","EGT/0040","Not Disbursing-008","Mali","Construction",3e+07,"Sovereign Financing","Low income",61.42875,"Fixed","O",2022-04-14,0,2021-04-08,NA,NA,NA,NA
+"9","EGT/0013","Not Disbursing-009","Kyrgyzstan","Real Estate",4e+07,"Sovereign Financing","Low income",69.03277,"Fixed","R",2021-06-17,0,2021-02-13,NA,NA,NA,NA
+"10","BD/0063","Not Disbursing-010","Tunisia","Real Estate",5e+07,"Sovereign Financing","Upper middle income",77.37795,"Fixed","R",2022-04-09,0,2021-10-22,NA,NA,NA,NA
+"11","BFA/0200","Disbursing-001","Suriname","Real Estate",5513530.20311845,"Line of Financing","Upper middle income",66.32663,"Fixed","O",2024-09-04,4962177.18280661,2023-04-08,2024-02-15,NA,NA,NA
+"12","TU/0043","Disbursing-002","Malawi","Mining & Metals",11500000,"Sovereign Financing","Low income",63.12654,"Fixed","O",2022-04-20,9056250,2020-06-28,2021-03-30,NA,NA,NA
+"13","TU/0063","Disbursing-003","Suriname","Food & Agriculture",1.7e+07,"Sovereign Financing","Upper middle income",66.32663,"Fixed","O",2021-08-07,3612500,2020-09-01,2021-05-09,NA,NA,NA
+"14","IRN/0002","Disbursing-004","Uzbekistan","Financial Services",22816499.0668052,"Two-Step Murabaha Financing","Lower middle income",61.68484,"Fixed","O",2023-01-22,20820055.3984597,2022-04-02,2022-12-05,NA,NA,NA
+"15","GM/0014","Disbursing-005","Turkey","Mining & Metals",2e+06,"Sovereign Financing","Upper middle income",73.83134,"Fixed","O",2023-08-18,1225000,2022-01-05,2022-12-27,NA,NA,NA
+"16","EGT/0008","Disbursing-006","Burkina Faso","I.T",5e+06,"Unsecured Financing","Low income",68.68324,"Fixed","R",2024-01-29,1312500,2022-11-13,2023-04-20,NA,NA,NA
+"17","BD/0070","Disbursing-007","Kenya","I.T",5e+07,"Sovereign Financing","Lower middle income",67.60733,"Fixed","O",2023-04-09,28125000,2022-01-17,2023-01-07,NA,NA,NA
+"18","BD/0018","Disbursing-008","Tunisia","Oil & Gas",2.5e+07,"Sovereign Financing","Upper middle income",77.37795,"Fixed","O",2022-05-20,20312500,2021-04-08,2021-05-14,NA,NA,NA
+"19","GM/0012","Disbursing-009","Chad","Financial Services",8e+06,"Sovereign Financing","Low income",47.23792,"Fixed","O",2022-06-02,1700000,2021-02-13,2022-01-29,NA,NA,NA
+"20","BD/0033","Disbursing-010","Malawi","Mining & Metals",2.5e+07,"Sovereign Financing","Low income",63.12654,"Fixed","O",2023-03-28,22187500,2021-10-22,2022-10-10,NA,NA,NA

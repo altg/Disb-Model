@@ -87,7 +87,7 @@ model_input$country_sub_region <- country_mapping$country_subregion[match(model_
 for (id in 1:nrow(model_input)) {     #One project at a time
   proj <- model_input[id,]
   
-  #print( proj$project_id)
+  print( proj$project_id)
   
   
   date_of_evaluation <- proj$evaluation_date
