@@ -124,7 +124,7 @@ trade_data <-
 
 
 ```{r}
-hdfile <- "../Inputs/Historical Data  Governance Indicators and Rating_157428296.xlsx"
+hdfile <- "Inputs/Historical Data  Governance Indicators and Rating_157428296.xlsx"
 
 dealing_with_cp <- read_excel(hdfile, 
     sheet = "DealingWithCPs", skip = 3) %>% 

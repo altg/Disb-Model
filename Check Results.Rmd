@@ -40,10 +40,24 @@ write_csv(profiles , paste0(output_dir , "full_disb_profile.csv") )
 
 ```{r}
 
-ops_data_check %>%  summarise( total_apr_amt = sum(approval_amount_usd)/1e6)
+ops_data_check %>%  
+  summarise( total_apr_amt = sum(approval_amount_usd)/1e6 , 
+             amount_already_disb = sum(amount_disbursed_at_evaluation_date_usd)/1e6) %>% 
+  mutate( total_disb_est = (total_apr_amt - amount_already_disb) )
 
 
 profiles %>%  summarise( total_disb = sum( amount_disbursed_between_tenors ) /1e6 )
+
+check1 <- ops_data_check %>% 
+  left_join(
+    profiles %>% 
+      group_by(project_id) %>% 
+      summarise( amt_disb = sum( amount_disbursed_between_tenors ) )
+  )
+
+check1 %>%  
+  filter( approval_amount_usd != amt_disb) 
+
 
 
 

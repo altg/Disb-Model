@@ -94,7 +94,7 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 for (id in 1:nrow(model_input)) {     #One project at a time
   proj <- model_input[id,]
   
-  #print( paste0( id , ":" , proj$project_title) )
+  print( paste0( id , ":" , proj$project_title) )
   
   #proj$project_title
   
@@ -635,4 +635,9 @@ for (i in seq(length(hs)))
 graphics.off()
 ```
 
+```{r}
+t_e <- Sys.time() - time_log
+
+sprintf( "Time Elaspsed : %.2f mins" , t_e )
+```
 

@@ -32,7 +32,7 @@ start_date <- dmy("01/01/2020")
 
 end_date <- dmy("01/01/2023")
 
-sample_size <- 10
+sample_size <- 100
 ```
 
 
@@ -100,7 +100,8 @@ ops_data <- ops_data_in %>%
     date_of_final_disbursement_override= ""
     
   ) %>% filter( approval_amount_usd != 0 , #!is.na(income_classification),
-                country != "Not Assigned") %>% 
+                country != "Not Assigned", 
+                !(sub_mode_of_finance %in% c("Loan LDMC", "Grant"))) %>% 
   mutate(
     sector = str_replace(sector , "And" , "and")
     # ,
@@ -245,7 +246,9 @@ test_data_sig <-
   test_data %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
+    project_id_org = project_id,
     project_title_org = project_title,
+    project_id = paste0( "NS", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Not Signed-", formatC(row_number(), width=3, flag="0") ),
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
     evaluation_date = date_of_approval  %m+% eval_offset_m + eval_offset_d
@@ -281,7 +284,9 @@ test_data_eff <-
   test_data %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
+    project_id_org = project_id,
     project_title_org = project_title,
+    project_id = paste0( "NE", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Not Effective-", formatC(row_number(), width=3, flag="0") ),
     evaluation_date = eval_date,
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
@@ -298,7 +303,6 @@ test_data_in <-
 
 
 # Effective but not disbursing projects
-
 ```{r}
 set.seed(1234)
 
@@ -324,7 +328,9 @@ test_data_fstd <-
   test_data %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
+    project_id_org = project_id,
     project_title_org = project_title,
+    project_id = paste0( "ND", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Not Disbursing-", formatC(row_number(), width=3, flag="0") ),
     evaluation_date = eval_date,
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
@@ -374,7 +380,9 @@ test_data_lstd <-
   test_data %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
+    project_id_org = project_id,
     project_title_org = project_title,
+    project_id = paste0( "CD", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Disbursing-", formatC(row_number(), width=3, flag="0") ),
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
     date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d,
@@ -400,7 +408,7 @@ test_data_in <- test_data_in %>%
   left_join(countries , by = c ("country" = "country")) %>% 
   relocate( income_classification , .after = sub_mode_of_finance ) %>% 
   mutate( year = case_when( 
-    year(date_of_approval) > 2021 ~ 2021,
+    year(date_of_approval) > 2021 ~ as.integer(2021),
     TRUE ~ year(date_of_approval) ) ) %>% 
   left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
   left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
@@ -427,7 +435,7 @@ test_data_in %>% select(project_id, project_title , date_of_approval , date_of_s
 
 
 
-test_data_in %>% view()
+test_data_in %>% glimpse()
 
 
 ```
@@ -438,10 +446,9 @@ test_data_in %>% view()
 ```{r}
 
 write.csv(test_data_in %>% 
-            filter( year(date_of_approval) > 2016 ) %>% 
-            slice_sample(n=100), 
-          file = paste0(input_dir, "isdb_test_prjs.csv"))
-
+            filter( year(date_of_approval) > 2016 ),
+            file = paste0(input_dir, "isdb_test_prjs.csv"))
+#  %>% slice_sample(n=100), 
 ```
 
 
