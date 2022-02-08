@@ -55,7 +55,9 @@ countries <- ops_data_in %>%
   filter(country != "Not Assigned")
 
 sectors <-  ops_data_in %>% 
-  distinct(sector) %>% 
+  group_by(sector) %>% 
+  summarise( n = n() ) %>% 
+  mutate( freq = n/sum(n)) %>% 
   mutate( sector = str_to_title(sector) ) %>% 
   mutate( sector = str_replace(sector , "And" , "and") )
   
@@ -77,7 +79,7 @@ ops_data <- ops_data_in %>%
     project_id = operation_id,
     project_title,
     country, # = sample( t , size = 1),
-    sector = str_to_title(sector),
+    #sector = str_to_title(sector),
     approval_amount_usd = approval_amt_usd,
     profile, 
     #rating  = rating_2020,
@@ -101,12 +103,14 @@ ops_data <- ops_data_in %>%
     
   ) %>% filter( approval_amount_usd != 0 , #!is.na(income_classification),
                 country != "Not Assigned", 
-                !(sub_mode_of_finance %in% c("Loan LDMC", "Grant"))) %>% 
-  mutate(
-    sector = str_replace(sector , "And" , "and")
-    # ,
-    # income_classification = str_to_sentence(income_classification)
-  ) 
+                !(sub_mode_of_finance %in% c("Loan LDMC", "Grant"))) 
+
+# %>% 
+#   mutate(
+#     sector = str_replace(sector , "And" , "and")
+#     # ,
+#     # income_classification = str_to_sentence(income_classification)
+#   ) 
   #%>% 
   # mutate(
   #   income_classification = str_replace(income_classification , "Low middle income" , "Lower middle income")
@@ -119,7 +123,7 @@ rows <-  nrow(ops_data)
 
 s_countries <- sample( countries$country , size = rows , replace = T)
 
-s_sectors <-  sample( sectors$sector , size = rows , replace = T)
+#s_sectors <-  sample( sectors$sector , size = rows , replace = T)
 
 
 #t <- profiles[c(1,3),]$profile
@@ -130,15 +134,15 @@ s_profile <- sample(profiles$profile, size = rows, replace = T  , prob = profile
 ops_data_out <-  ops_data %>% 
   mutate(
     country = s_countries,
-    sector = s_sectors,
+    #sector = s_sectors,
     profile = s_profile
   )
 
 
-ops_data_out %>% select( project_title , country , sector , profile )
+#ops_data_out %>% select( project_title , country , sector , profile )
 
 
-ops_data %>% select( project_title , country , sector , profile )
+#ops_data %>% select( project_title , country , sector , profile )
 
 ```
 
@@ -238,7 +242,7 @@ eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
 
 eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
 
-
+s_sectors <-  sample( sectors$sector , size = sample_size , replace = T , prob = sectors$freq)
 
 set.seed(234)
 
@@ -251,7 +255,8 @@ test_data_sig <-
     project_id = paste0( "NS", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Not Signed-", formatC(row_number(), width=3, flag="0") ),
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
-    evaluation_date = date_of_approval  %m+% eval_offset_m + eval_offset_d
+    evaluation_date = date_of_approval  %m+% eval_offset_m + eval_offset_d,
+    sector = s_sectors
   )
 
 
@@ -280,6 +285,9 @@ sig_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
 sig_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
 
 
+s_sectors <-  sample( sectors$sector , size = sample_size , replace = T , prob = sectors$freq)
+
+
 test_data_eff <- 
   test_data %>% 
   slice_sample(n = sample_size) %>% 
@@ -291,7 +299,8 @@ test_data_eff <-
     evaluation_date = eval_date,
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
     date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d,
-    evaluation_date = date_of_signature  %m+% eval_offset_m + eval_offset_d
+    evaluation_date = date_of_signature  %m+% eval_offset_m + eval_offset_d,
+    sector = s_sectors
   )
 
 test_data_in <- 
@@ -324,6 +333,8 @@ eff_offset_m <- months(sample( seq(1,12) , size = sample_size, replace = T))
 
 eff_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
 
+s_sectors <-  sample( sectors$sector , size = sample_size , replace = T , prob = sectors$freq)
+
 test_data_fstd <- 
   test_data %>% 
   slice_sample(n = sample_size) %>% 
@@ -336,7 +347,8 @@ test_data_fstd <-
     date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
     date_of_signature = date_of_approval %m+% sig_offset_m + sig_offset_d,
     date_of_effectiveness = date_of_signature %m+% eff_offset_m + eff_offset_d,
-    evaluation_date = date_of_effectiveness  %m+% eval_offset_m + eval_offset_d
+    evaluation_date = date_of_effectiveness  %m+% eval_offset_m + eval_offset_d,
+    sector = s_sectors
   )
 
 test_data_in <- 
@@ -376,6 +388,8 @@ fstd_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
 
 pct_disb <- sample( seq(0,1,0.0125) , size = sample_size, replace = T)
 
+s_sectors <-  sample( sectors$sector , size = sample_size , replace = T , prob = sectors$freq)
+
 test_data_lstd <- 
   test_data %>% 
   slice_sample(n = sample_size) %>% 
@@ -389,7 +403,8 @@ test_data_lstd <-
     date_of_effectiveness = date_of_signature %m+% eff_offset_m + eff_offset_d,
     date_of_first_disbursement = date_of_effectiveness %m+% fstd_offset_m + fstd_offset_d,
     evaluation_date = date_of_first_disbursement  %m+% eval_offset_m + eval_offset_d,
-    amount_disbursed_at_evaluation_date_usd = approval_amount_usd * pct_disb
+    amount_disbursed_at_evaluation_date_usd = approval_amount_usd * pct_disb,
+    sector = s_sectors
   )
 
 test_data_in <- 
@@ -409,7 +424,7 @@ test_data_in <- test_data_in %>%
   relocate( income_classification , .after = sub_mode_of_finance ) %>% 
   mutate( year = case_when( 
     year(date_of_approval) > 2021 ~ as.integer(2021),
-    TRUE ~ year(date_of_approval) ) ) %>% 
+    TRUE ~ as.integer(year(date_of_approval)) ) ) %>% 
   left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
   left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
   relocate(government_effectiveness , .before = sub_mode_of_finance) %>% 
@@ -451,4 +466,32 @@ write.csv(test_data_in %>%
 #  %>% slice_sample(n=100), 
 ```
 
+```{r}
+test_data_sig %>% count(sector , sort = T)
+
+test_data_eff %>% count(sector , sort = T)
+
+test_data_fstd %>% count(sector , sort = T)
+
+test_data_lstd %>% count(sector , sort = T)
+
+
+model_input <-  test_data_in %>% 
+  #select( -...1) %>% 
+  mutate( proj_type = str_replace(project_title,  '-.*' , ''))
+
+theme_set(theme_minimal())
+
+model_input %>% 
+  group_by(  proj_type,  sector ) %>% 
+  summarise( n = n() ) %>% 
+  mutate( sector = tidytext::reorder_within(sector,  n , proj_type)) %>% 
+  ggplot(aes( sector , n)) +
+  geom_col() +
+  coord_flip() +
+  tidytext::scale_x_reordered() +
+  facet_wrap(~proj_type, scales = "free_y") 
+
+
+```
 

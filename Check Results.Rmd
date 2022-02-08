@@ -64,6 +64,30 @@ check1 %>%
 
 ```
 
+```{r}
+
+#library(tidytext)
+
+ops_data_check %>% glimpse()
+
+
+model_input <-  test_data_in %>% 
+  select( -...1) %>% 
+  mutate( proj_type = str_replace(project_title,  '-.*' , ''))
+
+theme_set(theme_minimal())
+
+model_input %>% 
+  group_by( proj_type ) %>% 
+  count( sector , sort = T) %>% 
+  mutate( sector = tidytext::reorder_within(sector,  n , proj_type)) %>% 
+  ggplot(aes( sector , n)) +
+  geom_col() +
+  coord_flip() +
+  tidytext::scale_x_reordered() +
+  facet_wrap(~proj_type, scales = "free_y") 
+
+```
 
 
 ```{r}
@@ -94,6 +118,8 @@ plot_hist <- function(data_src , var){
   
   mean_val = mean(var)
   
+  #medean_val = median(var)
+  
   var_name = str_remove( deparse(substitute(var)) , ".*\\$days_from_" )
   
   #geom_histogram(aes(y=..density.. , fill = ), fill="lightblue")+
@@ -101,11 +127,15 @@ plot_hist <- function(data_src , var){
   
   data_src %>% 
   ggplot(aes(var)) +
-  geom_histogram(aes(y=..density.. , fill = catch_up_shift ) )+
-  geom_density(alpha=.2, fill="#FF6666") +
+  #geom_histogram(aes(y=..density.. , fill = catch_up_shift ) )+
+  geom_histogram(aes(y=..density.. ) , bins = 30 , alpha = .5)+
+  #geom_density(alpha=.2, fill="#FF6666") +
+  geom_density(alpha=.2) + 
   geom_vline(aes(xintercept= mean_val),
             color="black", linetype="dashed", size=.5 , alpha = .5) +
-  annotate("text" , x = mean_val , y  = 0 , label = paste0(sprintf("%.2f",mean_val))) +
+  # geom_vline(aes(xintercept= medean_val),
+  #           color="blue", linetype="dashed", size=.5 , alpha = .5) +
+  annotate("text" , x = mean_val , y  = 0 , label = paste0(sprintf("Avg. %.2f",mean_val)) , color = "red") +
   labs(title = var_name)
   
 }
@@ -134,7 +164,11 @@ p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
   
  
 
-(p1 | p2) / (p3 | p4)
+(p1 | p2) / (p3 | p4) + plot_annotation(
+  title = 'Model Output - Projects Not Signed',
+  subtitle = 'Distribution of projected time-taken by milestones(months)',
+  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Approved but not Signed projects')
+)
 
 ```
 
@@ -159,6 +193,10 @@ p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
   
  
 
-(p2 | p3) / (p4)
+(p2 | p3) / (p4) + plot_annotation(
+  title = 'Model Output - Projects Not Effective',
+  subtitle = 'Distribution of projected time-taken by milestones(months)',
+  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Signed but not Effective projects')
+)
 
 ```
