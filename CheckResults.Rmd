@@ -14,6 +14,7 @@ editor_options:
 library(tidyverse)
 library(lubridate)
 library(readxl)
+library(DataExplorer)
 
 library(gt)
 
@@ -58,6 +59,22 @@ write_csv(profiles , paste0(output_dir , "full_disb_profile.csv") )
 
 The Test data set used was generated from the actual dataset used for training using a random sampling technique.
 
+Structure of the Test Data Set:
+
+```{r}
+model_input %>% introduce() %>%  pivot_longer(1:9, names_to = "Item" , values_to = "value") %>% gt()
+```
+
+
+
+```{r}
+model_input %>%  plot_histogram()
+
+model_input %>%  plot_bar()
+
+```
+
+
 The Test data set is composed as follows:
 
 ```{r echo=FALSE}
@@ -78,22 +95,57 @@ model_input %>%
   )
 ```
 
+
+## Missing Values
+
+
+```{r}
+model_input %>%  plot_missing()
+```
+
+
+
 The data set under each category is balanced using stratified sampling from the original data set.
 
-```{r echo=FALSE}
 
+```{r}
 
 theme_set(theme_minimal())
 
-model_input %>% 
+plot_dcvar <- function(var) {
+  
+  model_input %>% 
   group_by( proj_type ) %>% 
-  count( sector , sort = T) %>% 
-  mutate( sector = tidytext::reorder_within(sector,  n , proj_type)) %>% 
-  ggplot(aes( sector , n)) +
+  count( !!sym(var) , sort = T) %>% 
+  mutate( dc_var = tidytext::reorder_within( !!sym(var) ,  n , proj_type)) %>% 
+  ggplot(aes( dc_var , n)) +
   geom_col(aes(fill=proj_type), show.legend = FALSE) +
   coord_flip() +
   tidytext::scale_x_reordered() +
   facet_wrap(~proj_type, scales = "free_y") 
+  
+}
+```
+
+
+
+```{r echo=FALSE}
+
+#plot_dcvar("sector")
+
+l <- c( "sector" , "sub_mode_of_finance" , "profile" , "income_classification")
+
+map(l , plot_dcvar)
+
+# model_input %>% 
+#   group_by( proj_type ) %>% 
+#   count( sector , sort = T) %>% 
+#   mutate( sector = tidytext::reorder_within(sector,  n , proj_type)) %>% 
+#   ggplot(aes( sector , n)) +
+#   geom_col(aes(fill=proj_type), show.legend = FALSE) +
+#   coord_flip() +
+#   tidytext::scale_x_reordered() +
+#   facet_wrap(~proj_type, scales = "free_y") 
 
 ```
 
@@ -105,6 +157,10 @@ A number of tests are run on the output produced by the model.
 
 
 ```{r echo=FALSE}
+
+
+model_output <- model_output %>% 
+  inner_join( model_input %>%  select(where( is.character ) , -proj_type , -project_title, -project_title_org  ) , by = c("project_id"))
 
 # ops_data_check %>%  
 #   summarise( total_apr_amt = sum(approval_amount_usd)/1e6 , 
@@ -205,6 +261,51 @@ plot_hist <- function(data_src , var){
 }
 ```
 
+```{r plot dist, include=FALSE}
+
+plot_dist <- function(var1 , time_days, data) {
+  
+  time_days2 <- paste0( "days_from_" , time_days)
+  
+  p <- data %>%
+  mutate( dc_var = fct_reorder(!!sym(var1) , !!sym(time_days2)) ) %>% 
+  ggplot(aes( !!sym(time_days2) , dc_var )) +
+  geom_boxplot(aes(fill = !!sym(var1) ) , show.legend = FALSE,
+               alpha = 0.5 , outlier.colour = "red", outlier.shape = 1, outlier.alpha = 0.5) +
+  #geom_jitter(width = 0.05) +
+  labs( title = time_days , subtitle = paste0( "by " , var1)) +
+  xlab(paste0(time_days, " (days)") )+
+  ylab(var1)
+  
+  
+  return(p)
+}
+
+
+#plot_dist("sector","approval_to_signature" , model_output)
+
+
+l3 <- c("sector" , "sub_mode_of_finance" , "income_classification" , "profile.y" )
+
+l4 <- c("approval_to_signature" ,   "signature_to_effectiveness" , "effectiveness_to_first_disbursement"   ,  "first_to_final_disbursement")
+
+
+plot_dist2 <- function(var , data) {
+  return(map( l3 ,  plot_dist  , var, data ))
+}
+
+
+t <- map(l4 , plot_dist2 , model_output %>% filter(proj_type == "Not Signed") )
+
+
+#wrap_plots(t[[1]])
+
+map( 1:4 , ~wrap_plots(t[[.x]]) )
+
+# plot_dist("sector" , "days_from_approval_to_signature" , 
+#           model_output %>% filter(proj_type == "Not Signed") )
+
+```
 
 
 # Not Signed Projects
@@ -237,10 +338,13 @@ p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 ```
 
 
+
+
+
 ## Summary Table
 
 ```{r include=FALSE}
-get_each <- function(data , x){
+get_each <- function(x ,data){
   data %>% 
     summarise(
     across( (starts_with("days_from") & contains(x) & !contains("_cap")) , 
@@ -253,35 +357,47 @@ get_each <- function(data , x){
 }
 
 
-get_summary <- function( data ){
-  
-  
-  get_each(data , "approval_to_signature") %>% 
-  bind_rows(
-    get_each(data , "signature_to_effectiveness")
-  ) %>% 
-  bind_rows(
-    get_each(data , "effectiveness_to_first")
-  ) %>% 
-  bind_rows(
-    get_each(data , "first_to_final")
-  ) %>% 
-    gt() %>% 
-    fmt_number(columns = 2:6)
-  
-}
 
-
-
+# get_summary <- function( data ){
+#   
+#   
+#   get_each(data , "approval_to_signature") %>% 
+#   bind_rows(
+#     get_each(data , "signature_to_effectiveness")
+#   ) %>% 
+#   bind_rows(
+#     get_each(data , "effectiveness_to_first")
+#   ) %>% 
+#   bind_rows(
+#     get_each(data , "first_to_final")
+#   ) %>% 
+#     gt() %>% 
+#     fmt_number(columns = 2:6)
+#   
+# }
+# 
+# 
+# get_summary( model_output %>% filter( proj_type == "Not Signed") )
 
 
 ```
 
-```{r echo=FALSE}
-get_summary( model_output %>% filter( proj_type == "Not Signed") )
+
+
+
+```{r not signed, echo=FALSE}
+l2 <- c("approval_to_signature" , "signature_to_effectiveness" , "effectiveness_to_first" ,"first_to_final" )
+
+
+map_dfr(l2, get_each , model_output %>% filter( proj_type == "Not Signed")) %>% 
+  gt() %>% 
+    fmt_number(columns = 2:6) %>% 
+  tab_header(
+    title = "Not Signed Projects",
+    subtitle = "Model Output Milestone Time Analysis"
+  )
+
 ```
-
-
 
 
 # Not Effective Projects
