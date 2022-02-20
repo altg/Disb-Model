@@ -466,7 +466,7 @@ write.csv(test_data_in %>%
 #  %>% slice_sample(n=100), 
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 test_data_sig %>% count(sector , sort = T)
 
 test_data_eff %>% count(sector , sort = T)

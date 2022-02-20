@@ -356,16 +356,7 @@ write.csv(test_data_in,
 ```
 
 
-
-```{r}
-
-write.csv(test_data_in %>% 
-            filter( year(date_of_approval) > 2016 ),
-            file = paste0(input_dir, "isdb_test_prjs.csv"))
-#  %>% slice_sample(n=100), 
-```
-
-```{r}
+```{r eval=FALSE, include=FALSE}
 test_data_sig %>% count(sector , sort = T)
 
 test_data_eff %>% count(sector , sort = T)

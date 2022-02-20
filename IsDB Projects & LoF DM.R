@@ -1,7 +1,7 @@
 # Disb Model - Project & LOF
 
 {
-  rm(list = ls())
+  #rm(list = ls())
   options(java.parameters = "-Xmx32g" )
   options(scipen = 999)
   setwd(dirname(rstudioapi::getSourceEditorContext()$path))
@@ -79,6 +79,11 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 
 
 #### Disbursement Model ####
+
+
+
+
+
 
 for (id in 1:nrow(model_input)) {     #One project at a time
   proj <- model_input[id,]
@@ -524,7 +529,6 @@ for (id in 1:nrow(model_input)) {     #One project at a time
                                                  date_of_final_disbursement))
   
 }
-
 
 
 ### Disbursement Profile Summary
