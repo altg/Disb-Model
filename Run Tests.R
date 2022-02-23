@@ -23,7 +23,7 @@ run_all_rmd("Gen Test Data.Rmd")
 source("IsDB Projects & LoF DM.R")
 
 
-file.copy("Inputs/isdb_test_prjs.csv", "Inputs/isdb_test_prjs_sim.csv" )  
+file.copy("Inputs/isdb_test_prjs.csv", "Inputs/isdb_test_prjs_sim.csv" , overwrite = T )  
 file.copy("Outputs/model_output.rda" , "Outputs/model_output_sim.rda",  overwrite = T)
 file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_sim.rda", overwrite = T)
 
@@ -34,7 +34,7 @@ run_all_rmd("Gen Test Comp Data.Rmd")
 
 source("IsDB Projects & LoF DM.R")
 
-file.copy("Inputs/isdb_test_prjs.csv", "Inputs/isdb_test_prjs_comp.csv" ) 
+file.copy("Inputs/isdb_test_prjs.csv", "Inputs/isdb_test_prjs_comp.csv" , overwrite = T) 
 file.copy("Outputs/model_output.rda" , "Outputs/model_output_comp.rda" , overwrite = T)
 file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_comp.rda" , overwrite = T)
 

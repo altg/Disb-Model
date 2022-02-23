@@ -716,8 +716,11 @@ test_lstd %>%
 
 ```{r measures}
 
-test_sig %>% 
+comp1 %>% 
   yardstick::metrics(days_from_approval_to_signature_act, days_from_approval_to_signature )
+
+comp1 %>% 
+  yardstick::iic(days_from_approval_to_signature_act, days_from_approval_to_signature )
 
 test_eff %>% 
   yardstick::metrics(days_from_signature_to_effectiveness_act, days_from_signature_to_effectiveness )
