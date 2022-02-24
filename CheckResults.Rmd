@@ -284,7 +284,7 @@ profiles %>%
 # Plot data
 
 ```{r include=FALSE}
-library(patchwork)
+
 
 
 plot_hist <- function(data_src , var){
