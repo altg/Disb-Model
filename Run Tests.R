@@ -38,7 +38,7 @@ file.copy("Inputs/isdb_test_prjs.csv", "Inputs/isdb_test_prjs_comp.csv" , overwr
 file.copy("Outputs/model_output.rda" , "Outputs/model_output_comp.rda" , overwrite = T)
 file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_comp.rda" , overwrite = T)
 
-
+file.info("Outputs/model_output_comp.rda")$mtime
 
 
 

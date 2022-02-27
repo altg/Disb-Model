@@ -12,7 +12,7 @@
   library(readxl)
   library(svDialogs)      
   library(DescTools)      
-  #library(ExcelFunctionsR)
+  library(ExcelFunctionsR)
   
   theme_set(theme_bw(base_size = 12))
 }
@@ -54,11 +54,12 @@ model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"), na.strings
 
 model_input$evaluation_date <- as.Date(model_input$evaluation_date, format = "%m/%d/%Y")
 model_input$date_of_approval <- as.Date(model_input$date_of_approval, format = "%m/%d/%Y")
-model_input$date_of_signature <- as.Date(model_input$date_of_signature, format = "%m/%d/%Y")
+model_input$date_of_signature <- as.Date(model_input$date_of_signature, format = "%Y-%m-%d")
+
 model_input$date_of_signature_override <- as.Date(model_input$date_of_signature_override, format = "%m/%d/%Y")
-model_input$date_of_effectiveness <- as.Date(model_input$date_of_effectiveness, format = "%m/%d/%Y")
+model_input$date_of_effectiveness <- as.Date(model_input$date_of_effectiveness, format = "%Y-%m-%d")
 model_input$date_of_effectiveness_override <- as.Date(model_input$date_of_effectiveness_override, format = "%m/%d/%Y")
-model_input$date_of_first_disbursement <- as.Date(model_input$date_of_first_disbursement, format = "%m/%d/%Y")
+model_input$date_of_first_disbursement <- as.Date(model_input$date_of_first_disbursement, format = "%Y-%m-%d")
 model_input$date_of_first_disbursement_override <- as.Date(model_input$date_of_first_disbursement_override, format = "%m/%d/%Y")
 model_input$date_of_final_disbursement_override <- as.Date(model_input$date_of_final_disbursement_override, format = "%m/%d/%Y")
 

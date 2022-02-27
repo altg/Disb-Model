@@ -105,6 +105,9 @@ ops_data <- ops_data_in %>%
   ) %>% filter(approval_amount_usd != 0 ,
                #!is.na(income_classification),
                country != "Not Assigned",
+               date_of_approval != date_of_signature,
+               date_of_signature != date_of_effectiveness,
+               date_of_effectiveness != date_of_first_disbursement,
                !(sub_mode_of_finance %in% c("Loan LDMC", "Grant"))) %>%
   mutate(
     sector = str_replace(sector , "And" , "and"),

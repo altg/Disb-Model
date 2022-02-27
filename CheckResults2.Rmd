@@ -10,6 +10,30 @@ editor_options:
   chunk_output_type: console
 ---
 
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(DataExplorer)
+library(patchwork)
+
+library(gt)
+
+theme_set(theme_minimal())
+
+dir <- getwd()   #Updates the path to the directory where the R Code is present
+input_dir <- paste0(dir, "/Inputs/") 
+
+output_dir <- paste0(dir , "/Outputs/")
+
+ops_data_in <- read_excel("Tests/idb_data.xlsx", 
+    sheet = "ops_data")
+
+```
+
+
 # Introduction
 
 Moody's Analytics developed a Disbursement Projection Model (DM) to project future disbursement for IsDB Projects as part of the ERM Project. The tests done on this DM and the results are captured in this document.
@@ -68,7 +92,417 @@ For each of the project types above we calculate the times (X) as shown in the t
 | Disbursing     | \-           | \-              | \-                | X                      |
 +----------------+--------------+-----------------+-------------------+------------------------+
 
-# Analysis 1 - Simulated Data
+
+# Analysis 1 - Actual vs. Predicted Comparison
+
+```{r datainput comp, include=FALSE}
+
+
+
+
+model_input_comp <- read_csv(file = paste0(input_dir, "isdb_test_prjs_comp.csv")) %>% 
+  select( -...1) %>% 
+  mutate( proj_type = str_replace(project_title,  '-.*' , ''))
+
+model_output_comp <- readRDS( file = paste0(output_dir , "model_output_comp.rda")) %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    proj_type = str_replace(project_title,  '-.*' , '')
+  )
+
+profiles_comp <- readRDS(file = paste0(output_dir , "full_disb_profile_comp.rda")) %>% 
+  janitor::clean_names()
+
+```
+
+
+
+```{r include=FALSE}
+model_input_comp_t <-
+  model_input_comp %>%
+  mutate(
+    days_from_approval_to_signature_act = time_length(date_of_signature_act - date_of_approval , "days"),
+    days_from_signature_to_effectiveness_act = time_length(date_of_effective_act - date_of_signature_act, "days"),
+    days_from_effectiveness_to_first_disbursement_act  = time_length(date_of_first_disb_act - date_of_effective_act,   "days"),
+    days_from_first_to_final_disbursement_act = time_length(date_of_last_disb_act - date_of_first_disb_act,   "days")
+  ) %>% 
+  select(project_id , contains("act") )
+```
+
+
+
+```{r join with projected, include=FALSE}
+comp1 <- 
+  model_output_comp %>% 
+  inner_join(model_input_comp_t , by = "project_id" ) %>% 
+  mutate(
+    days_from_approval_to_signature_res = days_from_approval_to_signature_act - days_from_approval_to_signature,
+    days_from_signature_to_effectiveness_res = days_from_signature_to_effectiveness_act - days_from_signature_to_effectiveness,
+    days_from_effectiveness_to_first_disbursement_res = days_from_effectiveness_to_first_disbursement_act -
+      days_from_effectiveness_to_first_disbursement,
+    days_from_first_to_final_disbursement_res = days_from_first_to_final_disbursement_act - days_from_first_to_final_disbursement
+    ) %>% 
+  rename( date_of_effectiveness_act = date_of_effective_act,
+          date_of_first_disbursement_act = date_of_first_disb_act,
+          date_of_final_disbursement_act = date_of_last_disb_act )
+```
+
+
+```{r echo=FALSE}
+plot_act_pred <- function(milestone , data) {
+  
+  
+  act <- paste0( "days_from_" , milestone , "_act" )
+  
+  pred <- paste0( "days_from_" , milestone )
+  
+  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
+  
+  # ptype <- switch( str_remove( deparse(substitute(comp_sig)) , "comp_") , 
+  #                  "sig" = "Not Signed" ,
+  #                  "eff" = "Not Effective",
+  #                  "fstd" = "Not Disbursing",
+  #                  "lstd" = "Disbursing")
+  # 
+  # psubtitle <- paste0(ptype ,  " Projects") 
+  
+  p <- data %>% 
+  ggplot( aes(x = !!sym(act) , y = !!sym(pred)) ) +
+  geom_point() + 
+  geom_abline(slope = 1 , intercept = 0) +
+  geom_smooth(method = "lm" , formula = y ~ x + 0) +
+  expand_limits(x = 0, y = 0) +
+    labs(title = ptitle ,  x = "Actual" , y = "Predicted")
+  
+  return(p) 
+}
+
+std_res <- function(res) {
+  return(
+        res / sqrt( sum( res^2 ) / ( length(res) - 2 )   )
+  )
+}
+
+comp_sig <-  comp1 %>% 
+  filter( str_detect(project_id , "NS")) %>% 
+  mutate(
+    days_from_approval_to_signature_std_res = std_res(days_from_approval_to_signature_res)
+    )                                                      
+
+comp_eff <- comp1 %>% 
+  filter( str_detect(project_id , "NE")) %>% 
+  mutate(
+    days_from_signature_to_effectiveness_std_res = std_res(days_from_signature_to_effectiveness_res)
+       )                                
+
+comp_fstd <- comp1 %>% 
+  filter( str_detect(project_id , "ND"))  %>% 
+  mutate(
+    days_from_effectiveness_to_first_disbursement_std_res = std_res(days_from_effectiveness_to_first_disbursement_res)
+       )                                
+
+comp_lstd <- comp1 %>% 
+  filter( str_detect(project_id , "CD"))  %>% 
+  mutate(
+      days_from_first_to_final_disbursement_std_res = std_res(days_from_first_to_final_disbursement_res)
+       )                                
+
+c1 <- c( "approval_to_signature" , "signature_to_effectiveness" , "effectiveness_to_first_disbursement" ,
+         "first_to_final_disbursement")
+```
+
+```{r echo=FALSE}
+plot_res <- function(milestone , data) {
+  fit <- paste0( "days_from_" , milestone  )
+  
+  res <- paste0( "days_from_" , milestone , "_res" )
+  
+  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
+  
+  p <- data %>% 
+  ggplot( aes(x = !!sym(fit) , y = !!sym(res)) ) +
+  geom_point() + 
+  geom_abline(slope = 0 , intercept = 0) +
+    expand_limits(x = 0, y = 0) +
+    labs(title = ptitle, 
+         subtitle = 'Residuals vs. Fitted Values',
+         x = "Predicted Value" , y = "Residuals")
+  
+  return(p) 
+}
+
+plot_std_res <- function(milestone , data) {
+  fit <- paste0( "days_from_" , milestone  )
+  
+  res <- paste0( "days_from_" , milestone , "_std_res" )
+  
+  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
+  
+  p <- data %>% 
+  mutate( sd2 = ( abs( !!sym(res) ) > 2) ) %>% 
+  ggplot( aes(x = !!sym(fit) , y = !!sym(res)) ) +
+  geom_point(aes( color =  sd2 )) + 
+  scale_color_manual(values=c("#458B74" , "#B22222")) +
+  geom_abline(slope = 0 , intercept = 0) +
+    expand_limits(x = 0, y = 0) +
+    labs(title = ptitle ,  
+         subtitle = 'Standardized Residuals vs. Fitted Values',
+         x = "Predicted Value" , 
+         y = "Std. Residuals" , caption = "RED = Outliers") +
+    theme(legend.position='none',
+          plot.caption = element_text(color = "#B22222", face = "italic"))
+  
+  return(p) 
+}
+
+plot_res_hist <- function(milestone , data) {
+  res <- paste0( "days_from_" , milestone , "_res" )
+  
+  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
+  p <- data %>%
+    ggplot( aes(x = !!sym(res) ) ) +
+    geom_histogram(aes(y=..density.. ) , bins = 30 , alpha = .5) +
+    geom_density() +
+    labs(title = ptitle ,  
+         x = "Residual Values" )
+  
+  return(p)
+}
+
+plot_res_qq <- function(milestone , data) {
+  res <- paste0( "days_from_" , milestone , "_res" )
+  
+  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
+  p <- data %>%
+    mutate( sd2 = ( abs( !!sym(res) ) > 2) ) %>%
+    ggplot( aes(sample = !!sym(res) ) ) +
+    stat_qq() +
+    stat_qq_line() +
+    labs(title = ptitle ,  
+         y = "Residual Values" )
+  
+  return(p)
+}
+
+```
+
+
+## Not Signed Projects
+
+Analysis of the Predicted times compared to actual. 
+
+```{r plots, echo=FALSE}
+#plot_act_pred( comp_sig , "approval_to_signature"  )
+wrap_plots( map(c1, plot_act_pred , comp_sig) ) + 
+  plot_annotation(
+  title = 'Not Signed Projects',
+  subtitle = 'Predicted vs. Actual (months)',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+)
+```
+
+### Analysis of Residuals
+
+The Residual is defined as $Residual = (Y_{act} - Y_{est})$ where $Y$ is the output or predicted variable
+
+The Standardized Residual is defined as $$S_{res} = \sqrt{\frac{\sum (Y_{act} - Y_{est})^2}{n - 2}}$$
+
+
+```{r echo=FALSE}
+p1 <- plot_res_hist(c1[1] , comp_sig)
+
+p2 <- plot_res_qq(c1[1] , comp_sig)
+
+(p1 | p2) + 
+  plot_annotation(
+  title = 'Not Signed Projects',
+  subtitle = "Distribution of Residuals",
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  )
+```
+
+
+
+```{r echo=FALSE}
+p1 <- plot_res(c1[1] , comp_sig) 
+
+p2 <- plot_std_res(c1[1] , comp_sig) + 
+  labs(subtitle = 'Standardized Residuals vs. Fitted Values' )
+
+(p1 | p2) + 
+  plot_annotation(
+  title = 'Not Signed Projects',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  )
+
+```
+
+
+### Outlier value detection
+
+Values where $S_{res} > 2$ are considered as Outliers
+
+```{r echo=FALSE}
+outlier_tbl <- function(var , start_var , end_var ,  data) {
+  
+  varname = paste0( "days_from_" , var)
+  
+  #start_var = paste0( "date_of_" , str_remove(var , "_.+") )
+  
+  #end_var = paste0( "date_of_" , str_remove(var , "^.+_") )
+  
+  data %>% filter( abs( !!sym(paste0( varname , "_std_res") ) )> 2) %>%
+  select(
+    project_id ,
+    !!sym( start_var ),
+    actual = !!sym( paste0( end_var , "_act")  ),
+    predicted = !!sym( end_var ),
+    actual_days = !!sym(paste0( varname , "_act")),
+    predicted_days = !!sym(varname),
+    residual = !!sym(paste0( varname , "_res"))
+  ) %>% 
+    arrange(residual) %>% 
+  gt() 
+}
+
+
+c2 <- c( "date_of_approval" , "date_of_signature" ,  "date_of_effectiveness" , "date_of_first_disbursement" , "date_of_final_disbursement")
+
+outlier_tbl( c1[1] , c2[1] , c2[2] , comp_sig) %>% 
+    tab_header(
+    title = "Model Outliers - Not Signed Projects",
+    subtitle = "Date of Signature"
+  )
+
+```
+
+```{r}
+comp_sig %>% 
+  yardstick::metrics(days_from_approval_to_signature_act, days_from_approval_to_signature ) %>%  select(-2) %>%
+  gt() %>%  
+fmt_number(columns = 2)
+```
+
+
+## Not Effective Projects
+
+Analysis of the Predicted effectiveness times compared to actual. 
+
+```{r, echo=FALSE}
+wrap_plots( map(c1[2:4], plot_act_pred , comp_eff) , ncol = 2 ) + 
+  plot_annotation(
+  title = 'Not Effective Projects',
+  subtitle = 'Predicted vs. Actual (days)',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+)
+```
+
+Analysis of Residuals
+
+```{r echo=FALSE}
+p1 <- plot_res(c1[2] , comp_eff) 
+
+p2 <- plot_std_res(c1[2] , comp_eff) 
+
+(p1 | p2) + 
+  plot_annotation(
+  title = 'Not Effective Projects',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  )
+```
+
+
+Outliers
+
+```{r echo=FALSE}
+outlier_tbl( c1[2] ,  c2[2] , c2[3] , comp_eff) %>% 
+    tab_header(
+    title = "Model Outliers - Not Effective Projects",
+    subtitle = "Date of Effectiveness"
+  )
+```
+
+
+## Not Disbursing Projects
+
+Analysis of the Predicted 1st Disbursement times compared to actual. 
+
+```{r, echo=FALSE}
+wrap_plots( map(c1[3:4], plot_act_pred , comp_fstd) , ncol = 2 ) + 
+  plot_annotation(
+  title = 'Not Disbursing Projects',
+  subtitle = 'Predicted vs. Actual (days)',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+)
+```
+
+Analysis of Residuals
+
+```{r echo=FALSE}
+p1 <- plot_res(c1[3] , comp_fstd) 
+
+p2 <- plot_std_res(c1[3] , comp_fstd) 
+
+(p1 | p2) + 
+  plot_annotation(
+  title = 'Not Disbursing Projects',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  )
+
+```
+
+Outliers
+
+```{r}
+outlier_tbl( c1[3] ,  c2[3] , c2[4] , comp_fstd) %>% 
+    tab_header(
+    title = "Model Outliers - Not Disbursing Projects",
+    subtitle = "Date of 1st Disb."
+  )
+```
+
+## Disbursing Projects
+
+Analysis of the Predicted 1st to last Disbursement times compared to actual. 
+
+```{r, echo=FALSE}
+wrap_plots( map(c1[4], plot_act_pred , comp_fstd)  ) + 
+  plot_annotation(
+  title = 'Disbursing Projects',
+  subtitle = 'Predicted vs. Actual (days)',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+)
+```
+
+Analysis of Residuals
+
+
+```{r echo=FALSE}
+p1 <- plot_res(c1[4] , comp_lstd) 
+
+p2 <- plot_std_res(c1[4] , comp_lstd) 
+
+(p1 | p2) + 
+  plot_annotation(
+  title = 'Disbursing Projects',
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  )
+```
+
+Outliers
+
+```{r}
+outlier_tbl( c1[4] ,  c2[4] , c2[5] , comp_lstd) %>% 
+    tab_header(
+    title = "Model Outliers - Not Disbursing Projects",
+    subtitle = "Date of Final Disb."
+  )
+```
+
+
+
+
+# Analysis 2 - Simulated Data
 
 The simulated data was generated as follows:
 
@@ -105,26 +539,6 @@ grViz("digraph test{
 
 
 
-```{r setup, include=FALSE}
-library(tidyverse)
-library(lubridate)
-library(readxl)
-library(DataExplorer)
-library(patchwork)
-
-library(gt)
-
-theme_set(theme_minimal())
-
-dir <- getwd()   #Updates the path to the directory where the R Code is present
-input_dir <- paste0(dir, "/Inputs/") 
-
-output_dir <- paste0(dir , "/Outputs/")
-
-ops_data_in <- read_excel("Tests/idb_data.xlsx", 
-    sheet = "ops_data")
-
-```
 
 
 ```{r datainput sim, include=FALSE}
@@ -509,435 +923,22 @@ get_each(l2[1] , ops_data %>% filter( proj_type_code > 1 ) ) %>%
 
 
 
-# Actual vs. Predicted Comparison
-
-```{r datainput comp, eval=FALSE, include=FALSE}
-
-
-model_input_comp <- read_csv(file = paste0(input_dir, "isdb_test_prjs_comp.csv")) %>% 
-  select( -...1) %>% 
-  mutate( proj_type = str_replace(project_title,  '-.*' , ''))
-
-model_output_comp <- readRDS( file = paste0(output_dir , "model_output_comp.rda")) %>% 
-  janitor::clean_names() %>% 
-  mutate(
-    proj_type = str_replace(project_title,  '-.*' , '')
-  )
-
-profiles_comp <- readRDS(file = paste0(output_dir , "full_disb_profile_comp.rda")) %>% 
-  janitor::clean_names()
-
-```
-
-
-
-```{r include=FALSE}
-model_input_comp_t <-
-  model_input_comp %>%
-  mutate(
-    days_from_approval_to_signature_act = time_length(date_of_signature_act - date_of_approval , "days"),
-    days_from_signature_to_effectiveness_act = time_length(date_of_effective_act - date_of_signature_act, "days"),
-    days_from_effectiveness_to_first_disbursement_act  = time_length(date_of_first_disb_act - date_of_effective_act,   "days"),
-    days_from_first_to_final_disbursement_act = time_length(date_of_last_disb_act - date_of_first_disb_act,   "days")
-  ) %>% 
-  select(project_id , contains("act") )
-```
-
-
-
-```{r join with projected, include=FALSE}
-
-comp1 <- 
-  model_output_comp %>% 
-  inner_join(model_input_comp_t , by = "project_id" ) %>% 
-  mutate(
-    days_from_approval_to_signature_res = days_from_approval_to_signature_act - days_from_approval_to_signature,
-    days_from_signature_to_effectiveness_res = days_from_signature_to_effectiveness_act - days_from_signature_to_effectiveness,
-    days_from_effectiveness_to_first_disbursement_res = days_from_effectiveness_to_first_disbursement_act -
-      days_from_effectiveness_to_first_disbursement,
-    days_from_first_to_final_disbursement_res = days_from_first_to_final_disbursement_act - days_from_first_to_final_disbursement
-    ) %>% 
-  rename( date_of_effectiveness_act = date_of_effective_act,
-          date_of_first_disbursement_act = date_of_first_disb_act,
-          date_of_final_disbursement_act = date_of_last_disb_act )
-
-```
-
-
-```{r}
-plot_act_pred <- function(milestone , data) {
-  
-  
-  act <- paste0( "days_from_" , milestone , "_act" )
-  
-  pred <- paste0( "days_from_" , milestone )
-  
-  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
-  
-  # ptype <- switch( str_remove( deparse(substitute(comp_sig)) , "comp_") , 
-  #                  "sig" = "Not Signed" ,
-  #                  "eff" = "Not Effective",
-  #                  "fstd" = "Not Disbursing",
-  #                  "lstd" = "Disbursing")
-  # 
-  # psubtitle <- paste0(ptype ,  " Projects") 
-  
-  p <- data %>% 
-  ggplot( aes(x = !!sym(act) , y = !!sym(pred)) ) +
-  geom_point() + 
-  geom_abline(slope = 1 , intercept = 0) +
-  geom_smooth(method = "lm" , formula = y ~ x + 0) +
-  expand_limits(x = 0, y = 0) +
-    labs(title = ptitle ,  x = "Actual" , y = "Predicted")
-  
-  return(p) 
-}
-
-std_res <- function(res) {
-  return(
-        res / sqrt( sum( res^2 ) / ( length(res) - 2 )   )
-  )
-}
-
-comp_sig <-  comp1 %>% 
-  filter( str_detect(project_id , "NS")) %>% 
-  mutate(
-    days_from_approval_to_signature_std_res = std_res(days_from_approval_to_signature_res)
-    )                                                      
-
-comp_eff <- comp1 %>% 
-  filter( str_detect(project_id , "NE")) %>% 
-  mutate(
-    days_from_signature_to_effectiveness_std_res = std_res(days_from_signature_to_effectiveness_res)
-       )                                
-
-comp_fstd <- comp1 %>% 
-  filter( str_detect(project_id , "ND"))  %>% 
-  mutate(
-    days_from_effectiveness_to_first_disbursement_std_res = std_res(days_from_effectiveness_to_first_disbursement_res)
-       )                                
-
-comp_lstd <- comp1 %>% 
-  filter( str_detect(project_id , "CD"))  %>% 
-  mutate(
-      days_from_first_to_final_disbursement_std_res = std_res(days_from_first_to_final_disbursement_res)
-       )                                
-
-c1 <- c( "approval_to_signature" , "signature_to_effectiveness" , "effectiveness_to_first_disbursement" ,
-         "first_to_final_disbursement")
-```
-
-```{r}
-plot_res <- function(milestone , data) {
-  fit <- paste0( "days_from_" , milestone  )
-  
-  res <- paste0( "days_from_" , milestone , "_res" )
-  
-  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
-  
-  p <- data %>% 
-  ggplot( aes(x = !!sym(fit) , y = !!sym(res)) ) +
-  geom_point() + 
-  geom_abline(slope = 0 , intercept = 0) +
-    expand_limits(x = 0, y = 0) +
-    labs(title = ptitle ,  x = "Predicted Value" , y = "Residuals")
-  
-  return(p) 
-}
-
-plot_std_res <- function(milestone , data) {
-  fit <- paste0( "days_from_" , milestone  )
-  
-  res <- paste0( "days_from_" , milestone , "_std_res" )
-  
-  ptitle <- paste0( str_to_title( str_replace_all( milestone , "_" , " " ) ) )
-  
-  p <- data %>% 
-  mutate( sd2 = ( abs( !!sym(res) ) > 2) ) %>% 
-  ggplot( aes(x = !!sym(fit) , y = !!sym(res)) ) +
-  geom_point(aes( color =  sd2 )) + 
-  scale_color_manual(values=c("#458B74" , "#B22222")) +
-  geom_abline(slope = 0 , intercept = 0) +
-    expand_limits(x = 0, y = 0) +
-    labs(title = ptitle ,  x = "Predicted Value" , y = "Std. Residuals" , caption = "RED = Outliers") +
-    theme(legend.position='none',
-          plot.caption = element_text(color = "#B22222", face = "italic"))
-  
-  return(p) 
-}
-```
-
-
-## Not Signed Projects
-
-Analysis of the Predicted times compared to actual. 
-
-```{r plots, echo=FALSE}
-#plot_act_pred( comp_sig , "approval_to_signature"  )
-wrap_plots( map(c1, plot_act_pred , comp_sig) ) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = 'Predicted vs. Actual (months)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-```
-
-Analysis of Residuals
-
-The Residual is defined as $Residual = (Y_{act} - Y_{est})$ where $Y$ is the output or predicted variable
-
-```{r}
-wrap_plots( map(c1[1], plot_res , comp_sig) ) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = 'Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-Analysis of Standardized Residuals
-
-The Standardized Residual is defined as $$S_{res} = \sqrt{\frac{\sum (Y_{act} - Y_{est})^2}{n - 2}}$$
-
-```{r}
-wrap_plots( map(c1[1], plot_std_res , comp_sig) ) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = 'Standardized Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-Outlier value detection
-
-Values where $S_{res} > 2$ are considered as Outliers
-
-```{r}
-outlier_tbl <- function(var , start_var , end_var ,  data) {
-  
-  varname = paste0( "days_from_" , var)
-  
-  #start_var = paste0( "date_of_" , str_remove(var , "_.+") )
-  
-  #end_var = paste0( "date_of_" , str_remove(var , "^.+_") )
-  
-  data %>% filter( abs( !!sym(paste0( varname , "_std_res") ) )> 2) %>%
-  select(
-    project_id ,
-    !!sym( start_var ),
-    predicted = !!sym( end_var ) ,
-    actual = !!sym( paste0( end_var , "_act")  ),
-    predicted_days = !!sym(varname),
-    actual_days = !!sym(paste0( varname , "_act")),
-    residual = !!sym(paste0( varname , "_res"))
-  ) %>%
-  gt() 
-}
-
-
-c2 <- c( "date_of_approval" , "date_of_signature" ,  "date_of_effectiveness" , "date_of_first_disbursement" , "date_of_final_disbursement")
-
-outlier_tbl( c1[1] , c2[1] , c2[2] , comp_sig) %>% 
-    tab_header(
-    title = "Model Outliers - Not Signed Projects",
-    subtitle = "Date of Signature"
-  )
-
-```
-
-
-
-## Not Effective Projects
-
-Analysis of the Predicted effectiveness times compared to actual. 
-
-```{r, echo=FALSE}
-wrap_plots( map(c1[2:4], plot_act_pred , comp_eff) , ncol = 2 ) + 
-  plot_annotation(
-  title = 'Not Effective Projects',
-  subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-```
-
-Analysis of Residuals
-
-
-```{r}
-wrap_plots( map(c1[2], plot_res , comp_eff) ) + 
-  plot_annotation(
-  title = 'Not Effective Projects',
-  subtitle = 'Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-Analysis of Standardized Residuals
-
-
-```{r}
-wrap_plots( map(c1[2], plot_std_res , comp_eff) ) + 
-  plot_annotation(
-  title = 'Not Effective Projects',
-  subtitle = 'Standardized Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-
-Outliers
-
-```{r}
-outlier_tbl( c1[2] ,  c2[2] , c2[3] , comp_eff) %>% 
-    tab_header(
-    title = "Model Outliers - Not Effective Projects",
-    subtitle = "Date of Effectiveness"
-  )
-```
-
-
-## Not Disbursing Projects
-
-Analysis of the Predicted 1st Disbursement times compared to actual. 
-
-```{r, echo=FALSE}
-wrap_plots( map(c1[3:4], plot_act_pred , comp_fstd) , ncol = 2 ) + 
-  plot_annotation(
-  title = 'Not Disbursing Projects',
-  subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-```
-
-Analysis of Residuals
-
-
-```{r}
-wrap_plots( map(c1[3], plot_res , comp_fstd) ) + 
-  plot_annotation(
-  title = 'Not Disbursing Projects',
-  subtitle = 'Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-Analysis of Standardized Residuals
-
-
-```{r}
-wrap_plots( map(c1[3], plot_std_res , comp_fstd) ) + 
-  plot_annotation(
-  title = 'Not Disbursing Projects',
-  subtitle = 'Standardized Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-
-Outliers
-
-```{r}
-outlier_tbl( c1[3] ,  c2[3] , c2[4] , comp_fstd) %>% 
-    tab_header(
-    title = "Model Outliers - Not Disbursing Projects",
-    subtitle = "Date of 1st Disb."
-  )
-```
-
-
-
-
-
-## Disbursing Projects
-
-Analysis of the Predicted 1st to last Disbursement times compared to actual. 
-
-```{r, echo=FALSE}
-wrap_plots( map(c1[4], plot_act_pred , comp_fstd)  ) + 
-  plot_annotation(
-  title = 'Disbursing Projects',
-  subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-```
-
-Analysis of Residuals
-
-
-```{r}
-wrap_plots( map(c1[4], plot_res , comp_lstd) ) + 
-  plot_annotation(
-  title = 'Disbursing Projects',
-  subtitle = 'Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-Analysis of Standardized Residuals
-
-
-```{r}
-wrap_plots( map(c1[4], plot_std_res , comp_lstd) ) + 
-  plot_annotation(
-  title = 'Disbursing Projects',
-  subtitle = 'Standardized Residuals vs. Fitted Values',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-
-```
-
-
-Outliers
-
-```{r}
-outlier_tbl( c1[4] ,  c2[4] , c2[5] , comp_lstd) %>% 
-    tab_header(
-    title = "Model Outliers - Not Disbursing Projects",
-    subtitle = "Date of Final Disb."
-  )
-```
-
-
-
 
 
 
 ```{r eval=FALSE, include=FALSE}
-comp_sig %>% 
-  ggplot( aes(x = days_from_approval_to_signature , y = days_from_approval_to_signature_res)) +
-  geom_point() + 
-  geom_abline(slope = 0 , intercept = 0) +
-  expand_limits(x = 0, y = 0)
 
-comp_sig %>% 
-  ggplot( aes(x = days_from_approval_to_signature , y = scale(days_from_approval_to_signature_res)) ) +
-  geom_point() + 
-  geom_abline(slope = 0 , intercept = 0) +
-  expand_limits(x = 0, y = 0)
 
 
 
 comp_sig %>% 
-  ggplot( aes(x = days_from_approval_to_signature , y = days_from_approval_to_signature_std_res) ) +
-  geom_point() + 
-  geom_abline(slope = 0 , intercept = 0) +
-  expand_limits(x = 0, y = 0)
-
-comp_sig %>% 
-  ggplot( aes(sample = days_from_approval_to_signature)) +
+  ggplot( aes(sample = days_from_approval_to_signature_res)) +
   stat_qq() +
   stat_qq_line()
 
 
 comp_sig %>% 
-  ggplot( aes(days_from_approval_to_signature_act)) +
+  ggplot( aes(days_from_approval_to_signature_res)) +
   geom_histogram(aes(y=..density.. ) , bins = 30 , alpha = .5)+
   geom_density()
 
@@ -953,8 +954,7 @@ comp_sig %>%
 
 ```{r measures, eval=FALSE, include=FALSE}
 
-comp_sig %>% 
-  yardstick::metrics(days_from_approval_to_signature_act, days_from_approval_to_signature )
+
 
 comp_eff %>% 
   yardstick::metrics(days_from_signature_to_effectiveness_act, days_from_signature_to_effectiveness )
