@@ -10,8 +10,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-
-
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(lubridate)
@@ -33,7 +31,6 @@ ops_data_in <- read_excel("Tests/idb_data.xlsx",
 
 ```
 
-
 # Introduction
 
 Moody's Analytics developed a Disbursement Projection Model (DM) to project future disbursement for IsDB Projects as part of the ERM Project. The tests done on this DM and the results are captured in this document.
@@ -50,33 +47,25 @@ The testing methodology was designed to achieve the following aims:
 
 To achieve the above aims the following tests were developed:
 
-1.  Run the model using simulated data, with objective to see how the model performs in the presence of new / unseen data
+*-* **Analysis 1** Run the model using a sampled subset of the training data and compare the predicted values with the actual values
 
-2.  Run the model using a sampled subset of the training data and compare the predicted values with the actual values
+*-* **Analysis 2** Run the model using synthetic data (data derived from training data using sampling), with objective to see how the model performs in the presence of new / unseen data
 
 # Generation of Test inputs
 
-> **Project Types**
+## Project Types
 
 Types of Projects used in our test sample
 
-> Not Signed
+* **Not Signed** - Projects that have been approved but not yet signed.
 
-These are projects that have been approved but not yet signed.
+* **Not Effective** - Projects approved and signed, but not yet declared as effective
 
-> Not Effective
+* **Not Disbursing** - Projects approved, signed, and declared as effective, but yet to begin disbursing
 
-These are projects which have been approved and signed, but not yet declared as effective
+* **Disbursing** - Projects which have been approved, signed, declared as effective, and disbursing, but not finished disbursing
 
-> Not Disbursing
-
-These are projects which have been approved, signed, and declared as effective, but yet to begin disbursing.
-
-> Disbursing
-
-These are projects which have been approved, signed, declared as effective, and have started disbursing.
-
-> **Testing Plan**
+## Testing Plan
 
 For each of the project types above we calculate the times (X) as shown in the table below.
 
@@ -93,12 +82,11 @@ For each of the project types above we calculate the times (X) as shown in the t
 +----------------+--------------+-----------------+-------------------+------------------------+
 
 
-# Analysis 1 - Actual vs. Predicted Comparison
+# Model Testing
+
+## Analysis 1 - Actual vs. Predicted Comparison
 
 ```{r datainput comp, include=FALSE}
-
-
-
 
 model_input_comp <- read_csv(file = paste0(input_dir, "isdb_test_prjs_comp.csv")) %>% 
   select( -...1) %>% 
@@ -115,8 +103,6 @@ profiles_comp <- readRDS(file = paste0(output_dir , "full_disb_profile_comp.rda"
 
 ```
 
-
-
 ```{r include=FALSE}
 model_input_comp_t <-
   model_input_comp %>%
@@ -128,8 +114,6 @@ model_input_comp_t <-
   ) %>% 
   select(project_id , contains("act") )
 ```
-
-
 
 ```{r join with projected, include=FALSE}
 comp1 <- 
@@ -146,7 +130,6 @@ comp1 <-
           date_of_first_disbursement_act = date_of_first_disb_act,
           date_of_final_disbursement_act = date_of_last_disb_act )
 ```
-
 
 ```{r echo=FALSE}
 plot_act_pred <- function(milestone , data) {
@@ -222,8 +205,9 @@ plot_res <- function(milestone , data) {
   p <- data %>% 
   ggplot( aes(x = !!sym(fit) , y = !!sym(res)) ) +
   geom_point() + 
-  geom_abline(slope = 0 , intercept = 0) +
-    expand_limits(x = 0, y = 0) +
+  geom_abline(slope = 0 , intercept = 0 ,linetype = "dashed") +
+  geom_smooth(  color = "#458B00" ) +
+  #  expand_limits(x = 0, y = 0) +
     labs(title = ptitle, 
          subtitle = 'Residuals vs. Fitted Values',
          x = "Predicted Value" , y = "Residuals")
@@ -243,8 +227,8 @@ plot_std_res <- function(milestone , data) {
   ggplot( aes(x = !!sym(fit) , y = !!sym(res)) ) +
   geom_point(aes( color =  sd2 )) + 
   scale_color_manual(values=c("#458B74" , "#B22222")) +
-  geom_abline(slope = 0 , intercept = 0) +
-    expand_limits(x = 0, y = 0) +
+   geom_smooth( method = "loess" , color = "#458B00" ) +
+   # expand_limits(x = 0, y = 0) +
     labs(title = ptitle ,  
          subtitle = 'Standardized Residuals vs. Fitted Values',
          x = "Predicted Value" , 
@@ -263,6 +247,7 @@ plot_res_hist <- function(milestone , data) {
     ggplot( aes(x = !!sym(res) ) ) +
     geom_histogram(aes(y=..density.. ) , bins = 30 , alpha = .5) +
     geom_density() +
+    scale_x_continuous() +
     labs(title = ptitle ,  
          x = "Residual Values" )
   
@@ -279,17 +264,17 @@ plot_res_qq <- function(milestone , data) {
     stat_qq() +
     stat_qq_line() +
     labs(title = ptitle ,  
-         y = "Residual Values" )
+         y = "Sample" ,
+         x = "Theoratical")
   
   return(p)
 }
 
 ```
 
-
 ## Not Signed Projects
 
-Analysis of the Predicted times compared to actual. 
+Analysis of the Predicted times compared to actual.
 
 ```{r plots, echo=FALSE}
 #plot_act_pred( comp_sig , "approval_to_signature"  )
@@ -307,23 +292,7 @@ The Residual is defined as $Residual = (Y_{act} - Y_{est})$ where $Y$ is the out
 
 The Standardized Residual is defined as $$S_{res} = \sqrt{\frac{\sum (Y_{act} - Y_{est})^2}{n - 2}}$$
 
-
-```{r echo=FALSE}
-p1 <- plot_res_hist(c1[1] , comp_sig)
-
-p2 <- plot_res_qq(c1[1] , comp_sig)
-
-(p1 | p2) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = "Distribution of Residuals",
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-  )
-```
-
-
-
-```{r echo=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 p1 <- plot_res(c1[1] , comp_sig) 
 
 p2 <- plot_std_res(c1[1] , comp_sig) + 
@@ -337,6 +306,19 @@ p2 <- plot_std_res(c1[1] , comp_sig) +
 
 ```
 
+
+```{r echo=FALSE}
+p1 <- plot_res_hist(c1[1] , comp_sig)
+
+p2 <- plot_res_qq(c1[1] , comp_sig)
+
+(p1 | p2) + 
+  plot_annotation(
+  title = 'Not Signed Projects',
+  subtitle = "Distribution of Residuals",
+  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  )
+```
 
 ### Outlier value detection
 
@@ -376,30 +358,65 @@ outlier_tbl( c1[1] , c2[1] , c2[2] , comp_sig) %>%
 
 ```
 
-```{r}
+
+
+```{r echo=FALSE}
 comp_sig %>% 
   yardstick::metrics(days_from_approval_to_signature_act, days_from_approval_to_signature ) %>%  select(-2) %>%
+  mutate( .metric = str_to_upper(.metric)) %>% 
   gt() %>%  
-fmt_number(columns = 2)
+fmt_number(columns = 2) %>%  tab_header(
+    title = "Not Signed Projects",
+    subtitle = "Model Performance Measurements"
+  ) %>% 
+  tab_footnote(
+    footnote = "Accuracy of predicted Date of Signature vs. Actual",
+    locations = cells_column_labels(
+      columns = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "RMSE - Root Mean Square Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 1
+    ))  %>% 
+  tab_footnote(
+    footnote = "RSQ - R Squared (higher better)",
+    locations = cells_body(
+      columns = 1 , row  = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "MAE - Mean Absolute Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 3
+    ))  
 ```
+
+
+### Conclussions
+
+* The Approval to Signature Model has a $R^2$ of 0.2
+
+* The presence of large outliers ($ > 2 SD$) impacts model performance
+
+* External factors (not considered here) affect the time from approval to signature
 
 
 ## Not Effective Projects
 
-Analysis of the Predicted effectiveness times compared to actual. 
+Analysis of the Predicted effectiveness times compared to actual.
 
 ```{r, echo=FALSE}
 wrap_plots( map(c1[2:4], plot_act_pred , comp_eff) , ncol = 2 ) + 
   plot_annotation(
   title = 'Not Effective Projects',
   subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  caption = paste0('Based on a sample input of ' , nrow(comp_eff) , ' projects')
 )
 ```
 
 Analysis of Residuals
 
-```{r echo=FALSE}
+```{r echo=FALSE,  message=FALSE, warning=FALSE}
 p1 <- plot_res(c1[2] , comp_eff) 
 
 p2 <- plot_std_res(c1[2] , comp_eff) 
@@ -407,10 +424,9 @@ p2 <- plot_std_res(c1[2] , comp_eff)
 (p1 | p2) + 
   plot_annotation(
   title = 'Not Effective Projects',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  caption = paste0('Based on a sample input of ' , nrow(comp_eff) , ' projects')
   )
 ```
-
 
 Outliers
 
@@ -423,9 +439,50 @@ outlier_tbl( c1[2] ,  c2[2] , c2[3] , comp_eff) %>%
 ```
 
 
+```{r echo=FALSE}
+comp_eff %>% 
+  yardstick::metrics(days_from_signature_to_effectiveness_act, days_from_signature_to_effectiveness ) %>%  select(-2) %>%
+  mutate( .metric = str_to_upper(.metric)) %>% 
+  gt() %>%  
+fmt_number(columns = 2) %>%  tab_header(
+    title = "Not Effective Projects",
+    subtitle = "Model Performance Measurements"
+  ) %>% 
+  tab_footnote(
+    footnote = "Accuracy of predicted Date of Effectiveness vs. Actual",
+    locations = cells_column_labels(
+      columns = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "RMSE - Root Mean Square Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 1
+    ))  %>% 
+  tab_footnote(
+    footnote = "RSQ - R Squared (higher better)",
+    locations = cells_body(
+      columns = 1 , row  = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "MAE - Mean Absolute Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 3
+    ))  
+```
+
+
+
+### Conclussions
+
+* The Signature to Effectiveness Model has a $R^2$ of 0.1
+
+* The presence of large outliers ($ > 2 SD$) impacts model performance
+
+* External factors (not considered here) affect the time from signature to effectiveness
+
 ## Not Disbursing Projects
 
-Analysis of the Predicted 1st Disbursement times compared to actual. 
+Analysis of the Predicted 1st Disbursement times compared to actual.
 
 ```{r, echo=FALSE}
 wrap_plots( map(c1[3:4], plot_act_pred , comp_fstd) , ncol = 2 ) + 
@@ -438,7 +495,7 @@ wrap_plots( map(c1[3:4], plot_act_pred , comp_fstd) , ncol = 2 ) +
 
 Analysis of Residuals
 
-```{r echo=FALSE}
+```{r echo=FALSE, message=FALSE,}
 p1 <- plot_res(c1[3] , comp_fstd) 
 
 p2 <- plot_std_res(c1[3] , comp_fstd) 
@@ -453,7 +510,7 @@ p2 <- plot_std_res(c1[3] , comp_fstd)
 
 Outliers
 
-```{r}
+```{r echo=FALSE}
 outlier_tbl( c1[3] ,  c2[3] , c2[4] , comp_fstd) %>% 
     tab_header(
     title = "Model Outliers - Not Disbursing Projects",
@@ -461,9 +518,49 @@ outlier_tbl( c1[3] ,  c2[3] , c2[4] , comp_fstd) %>%
   )
 ```
 
+
+```{r echo=FALSE}
+comp_fstd %>% 
+  yardstick::metrics(days_from_effectiveness_to_first_disbursement_act, days_from_effectiveness_to_first_disbursement ) %>%  select(-2) %>%
+  mutate( .metric = str_to_upper(.metric)) %>% 
+  gt() %>%  
+fmt_number(columns = 2) %>%  tab_header(
+    title = "Not Disbursing Projects",
+    subtitle = "Model Performance Measurements"
+  ) %>% 
+  tab_footnote(
+    footnote = "Accuracy of predicted Date of 1st Disb. vs. Actual",
+    locations = cells_column_labels(
+      columns = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "RMSE - Root Mean Square Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 1
+    ))  %>% 
+  tab_footnote(
+    footnote = "RSQ - R Squared (higher better)",
+    locations = cells_body(
+      columns = 1 , row  = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "MAE - Mean Absolute Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 3
+    ))  
+```
+
+### Conclussions
+
+* The Effectiveness to First Disbursement Model has a $R^2$ of 0.03, which signifies that the model is unable to account for a majority of the variation in the output
+
+* The presence of large outliers ($ > 2 SD$) impacts model performance
+
+* External factors (not considered here) affect the time from effectiveness to first disbursements
+
 ## Disbursing Projects
 
-Analysis of the Predicted 1st to last Disbursement times compared to actual. 
+Analysis of the Predicted 1st to last Disbursement times compared to actual.
 
 ```{r, echo=FALSE}
 wrap_plots( map(c1[4], plot_act_pred , comp_fstd)  ) + 
@@ -476,8 +573,7 @@ wrap_plots( map(c1[4], plot_act_pred , comp_fstd)  ) +
 
 Analysis of Residuals
 
-
-```{r echo=FALSE}
+```{r echo=FALSE,  message=FALSE, warning=FALSE}
 p1 <- plot_res(c1[4] , comp_lstd) 
 
 p2 <- plot_std_res(c1[4] , comp_lstd) 
@@ -491,7 +587,7 @@ p2 <- plot_std_res(c1[4] , comp_lstd)
 
 Outliers
 
-```{r}
+```{r echo=FALSE}
 outlier_tbl( c1[4] ,  c2[4] , c2[5] , comp_lstd) %>% 
     tab_header(
     title = "Model Outliers - Not Disbursing Projects",
@@ -499,22 +595,56 @@ outlier_tbl( c1[4] ,  c2[4] , c2[5] , comp_lstd) %>%
   )
 ```
 
+```{r echo=FALSE}
+comp_lstd %>% 
+  yardstick::metrics(days_from_first_to_final_disbursement_act, days_from_first_to_final_disbursement ) %>%  select(-2) %>%
+  mutate( .metric = str_to_upper(.metric)) %>% 
+  gt() %>%  
+fmt_number(columns = 2) %>%  tab_header(
+    title = "Disbursing Projects",
+    subtitle = "Model Performance Measurements"
+  ) %>% 
+  tab_footnote(
+    footnote = "Accuracy of predicted Date of final Disb. vs. Actual",
+    locations = cells_column_labels(
+      columns = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "RMSE - Root Mean Square Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 1
+    ))  %>% 
+  tab_footnote(
+    footnote = "RSQ - R Squared (higher better)",
+    locations = cells_body(
+      columns = 1 , row  = 2
+    ))  %>% 
+  tab_footnote(
+    footnote = "MAE - Mean Absolute Error (lower better)",
+    locations = cells_body(
+      columns = 1 , row  = 3
+    ))  
+```
 
 
+### Conclussions
 
-# Analysis 2 - Simulated Data
+* The First to Final Disbursement Model has a $R^2$ of 0.39
+
+* The presence of large outliers ($ > 2 SD$) impacts model performance
+
+* External factors (not considered here) affect the time from first to final disbursement
+
+
+# Analysis 2 - Synthetic Data
 
 The simulated data was generated as follows:
 
-
-1. Sample Train DS - Random sampling from Training Data
-2. Create Project Types - The project types stated above are generated
-3. Randomize Fields - Key fields i.e. Sector, Profile are randomized, and also the milestone dates
-4. Merge with External DS - For external indicators
-5. Write to File - Save to CSV file in format accepted by the model
-
-
-
+1.  Sample Train DS - Random sampling from Training Data
+2.  Create Project Types - The project types stated above are generated
+3.  Randomize Fields - Key fields i.e. Sector, Profile are randomized, and also the milestone dates
+4.  Merge with External DS - For external indicators
+5.  Write to File - Save to CSV file in format accepted by the model
 
 ```{r eval=FALSE, include=FALSE}
 
@@ -536,10 +666,6 @@ grViz("digraph test{
   }")
 
 ```
-
-
-
-
 
 ```{r datainput sim, include=FALSE}
 
@@ -563,7 +689,8 @@ profiles_sim <- readRDS(file = paste0(output_dir , "full_disb_profile_sim.rda"))
 ```
 
 ## Output Data Summary
-```{r include=FALSE}
+
+```{r echo=FALSE}
 introduce(model_output_sim) %>% 
   pivot_longer(1:9) %>% 
   gt()
@@ -578,11 +705,9 @@ model_output_sim %>%
 
 ```
 
-
-
 ## Distribution - Input data
 
-```{r echo=FALSE}
+```{r eval=FALSE, include=FALSE}
 plot_dcvar <- function(var) {
   
   model_input_sim %>% 
@@ -610,9 +735,9 @@ map(l , plot_dcvar)
 ```{r echo=FALSE}
 
 apr_amt <- model_input_sim %>%  
-   summarise( total_apr_amt = sum(approval_amount_usd)/1e6 ) 
+   summarise( total_apr_amt = sum(approval_amount_usd)/1e6  ) 
 
-disb_amt <- profiles_sim %>%  summarise( total_disb = sum( amount_disbursed_between_tenors ) /1e6 )
+disb_amt <- profiles_sim %>%  summarise( total_disb = sum( amount_disbursed_between_tenors , na.rm = T ) /1e6 )
 
 tibble( 
   apr_amt,
@@ -641,9 +766,12 @@ tibble(
 ```
 
 
+The 2 model outputs **do not match**, further investigation is needed.
+
 
 ## Distribution of Times - Output Data
 
+The output of the model is analysed to better understand the spread of values produced by the model. The Analysis is done by project type, the dates predicted by the model for each project type.
 
 ```{r eval=FALSE, include=FALSE}
 t <- model_output_sim %>% 
@@ -653,7 +781,6 @@ t <- model_output_sim %>%
 plot_boxplot(t, by = "proj_type" , ncol = 2)
 
 ```
-
 
 ```{r get_each, echo=FALSE}
 get_each <- function(x ,data){
@@ -701,9 +828,8 @@ plot_hist <- function(data_src , var){
 }
 ```
 
-
-
 ## Not Signed Projects
+
 ```{r echo=FALSE}
 
 data_in <- model_output_sim %>% 
@@ -746,8 +872,8 @@ p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 
 ```
 
-
 ## Not Effective Projects
+
 ```{r echo=FALSE}
 
 data_in <- model_output_sim %>% 
@@ -789,7 +915,6 @@ p3 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 
 ```
 
-
 ## Not Disbursing Projects
 
 ```{r echo=FALSE}
@@ -825,7 +950,6 @@ p2 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 
 ```
 
-
 ## Disbursing Projects
 
 ```{r echo=FALSE}
@@ -858,11 +982,9 @@ p1  + plot_annotation(
 
 ```
 
+<!-- ## Distribution of Times - Output Data -->
 
-## Distribution of Times - Output Data
-
-
-```{r echo=FALSE}
+```{r eval=FALSE, include=FALSE}
 t <- model_output_sim %>% 
   select(proj_type , days_from_approval_to_signature , days_from_signature_to_effectiveness,
          days_from_effectiveness_to_first_disbursement , days_from_first_to_final_disbursement)
@@ -870,7 +992,6 @@ t <- model_output_sim %>%
 plot_boxplot(t, by = "proj_type" , ncol = 2)
 
 ```
-
 
 ```{r eval=FALSE, include=FALSE}
 get_each <- function(x ,data){
@@ -921,48 +1042,12 @@ get_each(l2[1] , ops_data %>% filter( proj_type_code > 1 ) ) %>%
 
 ```
 
+## Conclussions
+
+* The model produces outputs which have a normal distribution (centered around mean)
+
+* The distributions have a long tail, i.e. the model produces some high values
+
+* There are issues with the reconciliation of the model output which need to be resolved.
 
 
-
-
-
-```{r eval=FALSE, include=FALSE}
-
-
-
-
-comp_sig %>% 
-  ggplot( aes(sample = days_from_approval_to_signature_res)) +
-  stat_qq() +
-  stat_qq_line()
-
-
-comp_sig %>% 
-  ggplot( aes(days_from_approval_to_signature_res)) +
-  geom_histogram(aes(y=..density.. ) , bins = 30 , alpha = .5)+
-  geom_density()
-
-
-plot_hist(comp_sig , comp_sig$days_from_approval_to_signature_res)
-
-comp_sig %>% 
-  ggplot( aes(sample = days_from_approval_to_signature_res)) +
-  stat_qq() +
-  stat_qq_line()
-
-```
-
-```{r measures, eval=FALSE, include=FALSE}
-
-
-
-comp_eff %>% 
-  yardstick::metrics(days_from_signature_to_effectiveness_act, days_from_signature_to_effectiveness )
-
-comp_fstd %>% 
-  yardstick::metrics(days_from_effectiveness_to_first_disbursement_act,  days_from_effectiveness_to_first_disbursement )
-
-comp_lstd %>% 
-  yardstick::metrics(days_from_first_to_final_disbursement_act,  days_from_first_to_final_disbursement )
-
-```
