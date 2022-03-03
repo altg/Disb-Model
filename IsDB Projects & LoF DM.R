@@ -1,14 +1,17 @@
 # Disb Model - Project & LOF
 
 {
-  #rm(list = ls())
+  rm(list = ls())
   options(java.parameters = "-Xmx32g" )
   options(scipen = 999)
   setwd(dirname(rstudioapi::getSourceEditorContext()$path))
   
-  library(tidyverse)
-  
   library(data.table)   #Ignore the warning messages
+  library(ggplot2)
+  library(openxlsx)
+  #library(xlsx)
+  library(plyr)
+  library(dplyr)
   library(readxl)
   library(svDialogs)      
   library(DescTools)      
@@ -46,20 +49,18 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 ### Loading Model Input File
 
+model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"),  stringsAsFactors = F)
 
 
-model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"), na.strings = "", stringsAsFactors = F)
-
-## End Changes
+#na.strings = "",
 
 model_input$evaluation_date <- as.Date(model_input$evaluation_date, format = "%m/%d/%Y")
 model_input$date_of_approval <- as.Date(model_input$date_of_approval, format = "%m/%d/%Y")
-model_input$date_of_signature <- as.Date(model_input$date_of_signature, format = "%Y-%m-%d")
-
+model_input$date_of_signature <- as.Date(model_input$date_of_signature, format = "%m/%d/%Y")
 model_input$date_of_signature_override <- as.Date(model_input$date_of_signature_override, format = "%m/%d/%Y")
-model_input$date_of_effectiveness <- as.Date(model_input$date_of_effectiveness, format = "%Y-%m-%d")
+model_input$date_of_effectiveness <- as.Date(model_input$date_of_effectiveness, format = "%m/%d/%Y")
 model_input$date_of_effectiveness_override <- as.Date(model_input$date_of_effectiveness_override, format = "%m/%d/%Y")
-model_input$date_of_first_disbursement <- as.Date(model_input$date_of_first_disbursement, format = "%Y-%m-%d")
+model_input$date_of_first_disbursement <- as.Date(model_input$date_of_first_disbursement, format = "%m/%d/%Y")
 model_input$date_of_first_disbursement_override <- as.Date(model_input$date_of_first_disbursement_override, format = "%m/%d/%Y")
 model_input$date_of_final_disbursement_override <- as.Date(model_input$date_of_final_disbursement_override, format = "%m/%d/%Y")
 
@@ -80,11 +81,6 @@ disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile
 
 
 #### Disbursement Model ####
-
-
-
-
-
 
 for (id in 1:nrow(model_input)) {     #One project at a time
   proj <- model_input[id,]
@@ -532,6 +528,7 @@ for (id in 1:nrow(model_input)) {     #One project at a time
 }
 
 
+
 ### Disbursement Profile Summary
 
 time_gap <- 90        #Time Interval Duration for Disbursement Summary
@@ -595,14 +592,11 @@ colnames(model_output) <- c("Project ID", "Project Title", "Approval Amount (USD
 write.csv(x = model_output, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
-saveRDS(model_output , file = paste0(output_dir , "model_output.rda"))
 
 # Disbursement Profiles
 
 write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
-
-saveRDS(full_disb_profile , file = paste0(output_dir , "full_disb_profile.rda"))
 
 
 # Disbursement Summary
@@ -619,11 +613,3 @@ for (i in seq(length(fd)))
 for (i in seq(length(hs)))
   print(replayPlot(hs[[i]])) # loop over plots and write to pdf
 graphics.off()
-
-
-
-
-
-
-
-

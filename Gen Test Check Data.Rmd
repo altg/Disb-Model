@@ -1,0 +1,376 @@
+---
+title: "Generate Project Test Data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+
+```
+
+
+```{r envparam}
+
+dir <- getwd()   #Updates the path to the directory where the R Code is present
+input_dir <- paste0(dir, "/Inputs/") 
+
+ops_data_in <- read_excel("Tests/idb_data.xlsx", 
+    sheet = "ops_data")
+
+sample_size <- 100
+
+caps <- c( 90 , 180 , 360)
+
+caps_disb <- c(3:7) * 360 # 3 to 7 years disb time cap
+
+```
+
+
+```{r}
+eval_date <- dmy("01-01-2021")
+
+set.seed(678)
+
+ops_data <- ops_data_in %>%
+  transmute(
+    project_id = operation_id,
+    project_title,
+    country,
+    sector = str_to_title(sector),
+    approval_amount_usd = approval_amt_usd,
+    profile,
+    #rating  = rating_2020,
+    #registering_property = 0,
+    #government_effectiveness = 0,
+    sub_mode_of_finance,
+    income_classification = country_class,
+    evaluation_date = eval_date,
+    amount_disbursed_at_evaluation_date_usd = (approval_amt_in_prj_curr / approval_amt_usd) *
+      disb_amt_in_prj_curr,
+    date_of_approval,
+    date_of_signature,
+    date_of_effectiveness = date_of_effective,
+    date_of_first_disbursement = date_of_first_disb,
+    days_from_approval_to_signature_cap = NA,
+    days_from_signature_to_effectiveness_cap = NA,
+    days_from_effectiveness_to_first_disbursement_cap = NA,
+    date_of_signature_override = NA,
+    date_of_effectiveness_override = NA,
+    date_of_first_disbursement_override = NA,
+    date_of_final_disbursement_override = NA,
+    status,
+    date_of_last_disb
+  ) %>% filter(approval_amount_usd != 0 ,
+               #!is.na(income_classification),
+               country != "Not Assigned",
+               date_of_approval != date_of_signature,
+               date_of_signature != date_of_effectiveness,
+               date_of_effectiveness != date_of_first_disbursement,
+               !(sub_mode_of_finance %in% c("Loan LDMC", "Grant"))) %>%
+  mutate(
+    sector = str_replace(sector , "And" , "and"),
+    income_classification = str_to_sentence(income_classification)
+  ) %>%
+  mutate(
+    income_classification = str_replace(
+      income_classification ,
+      "Low middle income" ,
+      "Lower middle income"
+    )
+  ) %>%
+  mutate(
+    proj_type_code = case_when(
+      status %in% c("Cancelled" , "Terminated") ~ 0,
+      is.na(date_of_signature) ~ 1,
+      is.na(date_of_effectiveness) ~ 2,
+      is.na(date_of_first_disbursement) ~ 3,
+      status == "Active" ~ 4,
+      status == "Completed" ~ 5,
+      T ~ 0
+    )
+  ) 
+
+# %>% 
+#   slice_sample(n=100)
+
+```
+
+
+
+# Load indicator data
+
+
+## Governance
+```{r}
+
+hd_file <- paste0( input_dir , "Historical Data  Governance Indicators and Rating_157428296.xlsx" )
+
+gov_effect <- read_excel( hd_file, 
+    sheet = "GovernmentEffectiveness", skip = 7) %>% 
+  rename( country_territory = ...1 ,
+          country = ...2 ) %>% 
+  slice(-1) %>% 
+  select(-country_territory) %>% 
+  mutate( across(2:48 , ~as.double(.x))) %>% 
+  janitor::clean_names() 
+
+
+gov_effect <- gov_effect %>% 
+   pivot_longer(
+    cols = starts_with("x"),
+    names_to = "year",
+    values_to = "government_effectiveness"
+  ) %>% 
+  mutate( year = as.integer( str_remove(year , "x") ) )
+
+
+```
+
+
+## Registering Property
+
+
+```{r}
+
+reg_property <- read_excel(hd_file, 
+    sheet = "Registering Property", skip = 3) %>% 
+  rename( country = ...1) %>% 
+  mutate( "2021" = `2020`) %>% 
+  pivot_longer(
+    cols = 2:48,
+    names_to = "year",
+    values_to = "registering_property"
+  ) %>% 
+  mutate( year = as.integer(year))
+
+```
+
+## Ratings
+
+```{r}
+
+ratings <- read_excel(hd_file, 
+    sheet = "Rating", skip = 5) %>% 
+  rename( country = "Quarter/Country") %>% 
+  pivot_longer(
+    cols = 2:188,
+    names_to = "year_quarter",
+    values_to = "rating"
+  )
+
+```
+
+# Not Signed Projects
+
+```{r}
+set.seed(567)
+
+test_data_sig <- 
+  ops_data %>% 
+  filter(proj_type_code > 1)  %>% # Signed projects
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_id_org = project_id,
+    project_title_org = project_title,
+    project_id = paste0( "NS", formatC(row_number(), width=3, flag="0") ),
+    project_title = paste0( "Not Signed-", formatC(row_number(), width=3, flag="0") ),
+    date_of_effectiveness = NA,
+    date_of_first_disbursement = NA,
+    evaluation_date = date_of_approval
+  )
+
+days_cap <- sample( caps , size = sample_size / 2  , replace = T )
+
+test_cap <- 
+  test_data_sig %>% 
+  slice_head( n  = sample_size / 2 ) %>% 
+  mutate(
+    days_from_approval_to_signature_cap = days_cap,
+    check_type  = "NSCAP"
+  )
+
+test_ovr <- 
+  test_data_sig %>% 
+  slice_tail( n  = sample_size / 2 ) %>% 
+  mutate(
+    date_of_signature_override = date_of_signature,
+    check_type  = "NSOVR"
+  )
+
+test_data_in <- test_cap %>% 
+  bind_rows(test_ovr) %>% 
+  mutate(
+    date_of_signature = NA
+  )
+
+```
+
+# Signed Not Effective Projects
+
+```{r}
+
+set.seed(789)
+
+test_data_eff <- 
+  ops_data %>% 
+  filter(proj_type_code > 2)  %>% # Effective projects
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_id_org = project_id,
+    project_title_org = project_title,
+    project_id = paste0( "NE", formatC(row_number(), width=3, flag="0") ),
+    project_title = paste0( "Not Effective-", formatC(row_number(), width=3, flag="0") ),
+    date_of_first_disbursement = NA,
+    evaluation_date = date_of_signature
+  )
+
+days_cap <- sample( caps , size = sample_size / 2  , replace = T )
+
+test_cap <- 
+  test_data_eff %>% 
+  slice_head( n  = sample_size / 2 ) %>% 
+  mutate(
+    days_from_signature_to_effectiveness_cap = days_cap,
+    check_type  = "NECAP"
+  )
+
+test_ovr <- 
+  test_data_eff %>% 
+  slice_tail( n  = sample_size / 2 ) %>% 
+  mutate(
+    date_of_effectiveness_override = date_of_effectiveness,
+    check_type  = "NEOVR"
+  )
+
+test_data_in <- 
+  test_data_in %>% 
+  bind_rows(test_cap) %>% 
+  bind_rows(test_ovr) %>% 
+  mutate(
+    date_of_effectiveness = NA
+  )
+
+
+```
+
+
+# Effective but not disbursing projects
+```{r}
+set.seed(1234)
+
+test_data_fstd <- 
+  ops_data %>% 
+  filter(proj_type_code > 3)  %>% # Not Disb projects
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_id_org = project_id,
+    project_title_org = project_title,
+    project_id = paste0( "ND", formatC(row_number(), width=3, flag="0") ),
+    project_title = paste0( "Not Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    evaluation_date = date_of_effectiveness
+  )
+
+
+
+days_cap <- sample( caps , size = sample_size / 2  , replace = T )
+
+test_cap <- 
+  test_data_fstd %>% 
+  slice_head( n  = sample_size / 2 ) %>% 
+  mutate(
+    days_from_effectiveness_to_first_disbursement_cap = days_cap,
+    check_type  = "NDCAP"
+  )
+
+test_ovr <- 
+  test_data_fstd %>% 
+  slice_tail( n  = sample_size / 2 ) %>% 
+  mutate(
+    date_of_first_disbursement_override = date_of_first_disbursement,
+    check_type  = "NDOVR"
+  )
+
+test_data_in <- 
+  test_data_in %>% 
+  bind_rows(test_cap) %>% 
+  bind_rows(test_ovr) %>% 
+  mutate(
+    date_of_first_disbursement = NA
+  )
+
+
+```
+
+# Disbursing Projects
+
+```{r}
+
+set.seed(5467)
+
+test_data_lstd <- 
+  ops_data %>% 
+  filter(proj_type_code > 3)  %>% # Disb projects
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_id_org = project_id,
+    project_title_org = project_title,
+    project_id = paste0( "CD", formatC(row_number(), width=3, flag="0") ),
+    project_title = paste0( "Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    evaluation_date = date_of_first_disbursement
+  )
+
+
+test_ovr <- 
+  test_data_lstd %>% 
+  #slice_tail( n  = sample_size / 2 ) %>% 
+  mutate(
+    date_of_final_disbursement_override = date_of_last_disb,
+    check_type  = "CDOVR"
+  )
+
+test_data_in <- 
+  test_data_in %>% 
+  bind_rows(test_ovr) %>% 
+  mutate(
+    amount_disbursed_at_evaluation_date_usd = replace_na(amount_disbursed_at_evaluation_date_usd , 0)
+  )
+
+```
+
+# Merge additional data with the main data
+
+```{r}
+
+test_data_in <- test_data_in %>% 
+   mutate( year = case_when( 
+    year(date_of_approval) > 2021 ~ as.integer(2021),
+    TRUE ~ as.integer(year(date_of_approval)) ) ) %>% 
+  left_join( gov_effect , by = c("country" = "country", "year" = "year") ) %>% 
+  left_join( reg_property , by = c("country" = "country", "year" = "year") ) %>% 
+  relocate(government_effectiveness , .before = sub_mode_of_finance) %>% 
+  relocate(registering_property , .before = sub_mode_of_finance ) %>% 
+  mutate( year_quarter = case_when(
+    year == 2021 & quarter(date_of_approval) == 4 ~ paste0( year , "Q3" ),
+    year == 2021 ~ paste0( 2021 , "Q3" ),
+    TRUE ~ paste0( year , "Q" , quarter(date_of_approval)   ) ) ) %>% 
+  left_join( ratings  , by = c("country" = "country", "year_quarter" = "year_quarter")  ) %>% 
+  relocate( rating , .after = profile ) %>%
+  select( -year , -year_quarter)
+
+
+test_data_in %>% glimpse()
+```
+
+
+# Write to data file
+```{r}
+write.csv(test_data_in,
+            file = paste0(input_dir, "isdb_test_prjs.csv"))
+```
+
+
