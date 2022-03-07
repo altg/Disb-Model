@@ -1,5 +1,5 @@
 ---
-title: "Disbursement Projection Model"
+title: "Disbursement Projection Model - Trade Finance"
 author: "IsDB ERM Disbursement Modelling Track Team"
 subtitle: Testing and Performance Evaluation
 output:
@@ -26,14 +26,14 @@ input_dir <- paste0(dir, "/Inputs/")
 
 output_dir <- paste0(dir , "/Outputs/")
 
-ops_data_in <- read_excel("Tests/idb_data.xlsx", 
-    sheet = "ops_data")
+trade_data_in <- read_excel("Tests/idb_trade_data.xlsx", 
+    sheet = "trade_data")
 
 ```
 
 # Introduction
 
-Moody's Analytics developed a Disbursement Projection Model (DM) to project future disbursement for IsDB Projects as part of the ERM Project. The tests done on this DM and the results are captured in this document.
+Moody's Analytics developed a Disbursement Projection Model (DM) to project future disbursement for IsDB Trade Finance Projects as part of the ERM Project. The tests done on this DM and the results are captured in this document.
 
 # Testing Methodology
 
@@ -62,15 +62,11 @@ To achieve the above aims the following tests were developed:
 
 ## Project Types
 
-Types of Projects used in our test sample
+Types of Trade Finance Projects used in our test sample
 
-* **Not Signed** - Projects that have been approved but not yet signed.
+* **Not Disbursing** - Projects approved, but yet to begin disbursing
 
-* **Not Effective** - Projects approved and signed, but not yet declared as effective
-
-* **Not Disbursing** - Projects approved, signed, and declared as effective, but yet to begin disbursing
-
-* **Disbursing** - Projects which have been approved, signed, declared as effective, and disbursing, but not finished disbursing
+* **Disbursing** - Projects which have been approved, and have started disbursing, but not yet to finish disbursing
 
 # Model Testing
 
@@ -80,17 +76,13 @@ Types of Projects used in our test sample
 
 When generating the test data, for each of the project types (described above) samples are produced, such that the times shown by **X** will be predicted by the model.
 
-+----------------+--------------+-----------------+-------------------+------------------------+
-| Project Type   | Time to Sig. | Time of Effect. | Time to 1st Disb. | Time 1st to Last Disb. |
-+================+==============+=================+===================+========================+
-| Not Signed     | X            | X               | X                 | X                      |
-+----------------+--------------+-----------------+-------------------+------------------------+
-| Not Effective  | \-           | X               | X                 | X                      |
-+----------------+--------------+-----------------+-------------------+------------------------+
-| Not Disbursing | \-           | \-              | X                 | X                      |
-+----------------+--------------+-----------------+-------------------+------------------------+
-| Disbursing     | \-           | \-              | \-                | X                      |
-+----------------+--------------+-----------------+-------------------+------------------------+
++----------------+-------------------+------------------------+
+| Project Type   | Time to 1st Disb. | Time 1st to Last Disb. |
++================+===================+========================+
+| Not Disbursing | X                 | X                      |
++----------------+-------------------+------------------------+
+| Disbursing     | \-                | X                      |
++----------------+-------------------+------------------------+
 
 ### Types of Analysis
 
@@ -117,17 +109,17 @@ The test data was generated as follows:
 
 ```{r datainput comp, include=FALSE}
 
-model_input_comp <- read_csv(file = paste0(input_dir, "isdb_test_prjs_comp.csv")) %>% 
+model_input_comp <- read_csv(file = paste0(input_dir, "isdb_test_trade_comp.csv")) %>% 
   select( -...1) %>% 
   mutate( proj_type = str_replace(project_title,  '-.*' , ''))
 
-model_output_comp <- readRDS( file = paste0(output_dir , "model_output_comp.rda")) %>% 
+model_output_comp <- readRDS( file = paste0(output_dir , "model_trade_output_comp.rda")) %>% 
   janitor::clean_names() %>% 
   mutate(
     proj_type = str_replace(project_title,  '-.*' , '')
   )
 
-profiles_comp <- readRDS(file = paste0(output_dir , "full_disb_profile_comp.rda")) %>% 
+profiles_comp <- readRDS(file = paste0(output_dir , "full_trade_disb_profile_comp.rda")) %>% 
   janitor::clean_names()
 
 ```
@@ -136,10 +128,8 @@ profiles_comp <- readRDS(file = paste0(output_dir , "full_disb_profile_comp.rda"
 model_input_comp_t <-
   model_input_comp %>%
   mutate(
-    days_from_approval_to_signature_act = time_length(date_of_signature_act - date_of_approval , "days"),
-    days_from_signature_to_effectiveness_act = time_length(date_of_effective_act - date_of_signature_act, "days"),
-    days_from_effectiveness_to_first_disbursement_act  = time_length(date_of_first_disb_act - date_of_effective_act,   "days"),
-    days_from_first_to_final_disbursement_act = time_length(date_of_last_disb_act - date_of_first_disb_act,   "days")
+    days_from_approval_to_first_disbursement_act  = time_length(date_of_first_disbursement_act - date_of_approval,   "days"),
+    days_from_first_to_final_disbursement_act = time_length(date_of_last_disb_act - date_of_first_disbursement_act,   "days")
   ) %>% 
   select(project_id , contains("act") )
 ```
@@ -149,15 +139,11 @@ comp1 <-
   model_output_comp %>% 
   inner_join(model_input_comp_t , by = "project_id" ) %>% 
   mutate(
-    days_from_approval_to_signature_res = days_from_approval_to_signature_act - days_from_approval_to_signature,
-    days_from_signature_to_effectiveness_res = days_from_signature_to_effectiveness_act - days_from_signature_to_effectiveness,
-    days_from_effectiveness_to_first_disbursement_res = days_from_effectiveness_to_first_disbursement_act -
-      days_from_effectiveness_to_first_disbursement,
+        days_from_approval_to_first_disbursement_res = days_from_approval_to_first_disbursement_act -
+      days_from_approval_to_first_disbursement,
     days_from_first_to_final_disbursement_res = days_from_first_to_final_disbursement_act - days_from_first_to_final_disbursement
-    ) %>% 
-  rename( date_of_effectiveness_act = date_of_effective_act,
-          date_of_first_disbursement_act = date_of_first_disb_act,
-          date_of_final_disbursement_act = date_of_last_disb_act )
+  ) %>% 
+  rename( date_of_final_disbursement_act = date_of_last_disb_act )
 ```
 
 ```{r echo=FALSE}
@@ -195,22 +181,11 @@ std_res <- function(res) {
   )
 }
 
-comp_sig <-  comp1 %>% 
-  filter( str_detect(project_id , "NS")) %>% 
-  mutate(
-    days_from_approval_to_signature_std_res = std_res(days_from_approval_to_signature_res)
-    )                                                      
-
-comp_eff <- comp1 %>% 
-  filter( str_detect(project_id , "NE")) %>% 
-  mutate(
-    days_from_signature_to_effectiveness_std_res = std_res(days_from_signature_to_effectiveness_res)
-       )                                
 
 comp_fstd <- comp1 %>% 
   filter( str_detect(project_id , "ND"))  %>% 
   mutate(
-    days_from_effectiveness_to_first_disbursement_std_res = std_res(days_from_effectiveness_to_first_disbursement_res)
+    days_from_approval_to_first_disbursement_std_res = std_res(days_from_approval_to_first_disbursement_res)
        )                                
 
 comp_lstd <- comp1 %>% 
@@ -219,8 +194,11 @@ comp_lstd <- comp1 %>%
       days_from_first_to_final_disbursement_std_res = std_res(days_from_first_to_final_disbursement_res)
        )                                
 
-c1 <- c( "approval_to_signature" , "signature_to_effectiveness" , "effectiveness_to_first_disbursement" ,
+c1 <- c(  "approval_to_first_disbursement" ,
          "first_to_final_disbursement")
+
+c2 <- c( "date_of_approval" , "date_of_first_disbursement" , "date_of_final_disbursement")
+
 ```
 
 ```{r echo=FALSE}
@@ -307,60 +285,7 @@ plot_res_qq <- function(milestone , data) {
 
 ```
 
-### Not Signed Projects
 
-Analysis of the Predicted times compared to actual.
-
-```{r plots, echo=FALSE}
-#plot_act_pred( comp_sig , "approval_to_signature"  )
-wrap_plots( map(c1, plot_act_pred , comp_sig) ) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = 'Predicted vs. Actual (months)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-)
-```
-
-### Analysis of Residuals
-
-The Residual is defined as $Residual = R_i = (Y_{act} - Y_{est})$ where $Y$ is the output or predicted variable
-
-The Standardized Residual is defined as 
-
-$$S_{i} = \frac{R_i}{\sqrt{\frac{\sum (Y_{act} - Y_{est})^2}{n - 2}}} = \frac{Residual_i}{Standard~Deviation~of~Residual_i} $$
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-p1 <- plot_res(c1[1] , comp_sig) 
-
-p2 <- plot_std_res(c1[1] , comp_sig) 
-
-(p1 | p2) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = 'Approval to Signature times',
-  #caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-  caption = 'Reference Line should be flat and horizontal'
-  )
-
-```
-
-
-```{r echo=FALSE}
-p1 <- plot_res_hist(c1[1] , comp_sig)
-
-p2 <- plot_res_qq(c1[1] , comp_sig)
-
-(p1 | p2) + 
-  plot_annotation(
-  title = 'Not Signed Projects',
-  subtitle = "Distribution of Residuals",
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
-  )
-```
-
-### Outlier value detection
-
-Values where $S_{res} > 2$ are considered as Outliers
 
 ```{r echo=FALSE}
 outlier_tbl <- function(var , start_var , end_var ,  data) {
@@ -386,170 +311,55 @@ outlier_tbl <- function(var , start_var , end_var ,  data) {
 }
 
 
-c2 <- c( "date_of_approval" , "date_of_signature" ,  "date_of_effectiveness" , "date_of_first_disbursement" , "date_of_final_disbursement")
-
-outlier_tbl( c1[1] , c2[1] , c2[2] , comp_sig) %>% 
-    tab_header(
-    title = "Model Outliers - Not Signed Projects",
-    subtitle = "Date of Signature"
-  )
+# outlier_tbl( c1[1] , c2[1] , c2[2] , comp_sig) %>% 
+#     tab_header(
+#     title = "Model Outliers - Not Signed Projects",
+#     subtitle = "Date of Signature"
+#   )
 
 ```
 
-
-
-```{r echo=FALSE}
-comp_sig %>% 
-  yardstick::metrics(days_from_approval_to_signature_act, days_from_approval_to_signature ) %>%  select(-2) %>%
-  mutate( .metric = str_to_upper(.metric)) %>% 
-  gt() %>%  
-fmt_number(columns = 2) %>%  tab_header(
-    title = "Not Signed Projects",
-    subtitle = "Model Performance Measurements"
-  ) %>% 
-  tab_footnote(
-    footnote = "Accuracy of predicted Date of Signature vs. Actual",
-    locations = cells_column_labels(
-      columns = 2
-    ))  %>% 
-  tab_footnote(
-    footnote = "RMSE - Root Mean Square Error (lower better)",
-    locations = cells_body(
-      columns = 1 , row  = 1
-    ))  %>% 
-  tab_footnote(
-    footnote = "RSQ - R Squared (higher better)",
-    locations = cells_body(
-      columns = 1 , row  = 2
-    ))  %>% 
-  tab_footnote(
-    footnote = "MAE - Mean Absolute Error (lower better)",
-    locations = cells_body(
-      columns = 1 , row  = 3
-    ))  
-```
-
-
-### Conclussions
-
-* The Approval to Signature Model has a $R^2$ of 0.2
-
-* The presence of large outliers ($ > 2 SD$) impacts model performance
-
-* External factors (not considered here) affect the time from approval to signature
-
-
-### Not Effective Projects
-
-Analysis of the Predicted effectiveness times compared to actual.
-
-```{r, echo=FALSE}
-wrap_plots( map(c1[2:4], plot_act_pred , comp_eff) , ncol = 2 ) + 
-  plot_annotation(
-  title = 'Not Effective Projects',
-  subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_eff) , ' projects')
-)
-```
-
-Analysis of Residuals
-
-```{r echo=FALSE,  message=FALSE, warning=FALSE}
-p1 <- plot_res(c1[2] , comp_eff) 
-
-p2 <- plot_std_res(c1[2] , comp_eff) 
-
-(p1 | p2) + 
-  plot_annotation(
-  title = 'Not Effective Projects',
-  caption = paste0('Based on a sample input of ' , nrow(comp_eff) , ' projects')
-  )
-```
-
-Outliers
-
-```{r echo=FALSE}
-outlier_tbl( c1[2] ,  c2[2] , c2[3] , comp_eff) %>% 
-    tab_header(
-    title = "Model Outliers - Not Effective Projects",
-    subtitle = "Date of Effectiveness"
-  )
-```
-
-
-```{r echo=FALSE}
-comp_eff %>% 
-  yardstick::metrics(days_from_signature_to_effectiveness_act, days_from_signature_to_effectiveness ) %>%  select(-2) %>%
-  mutate( .metric = str_to_upper(.metric)) %>% 
-  gt() %>%  
-fmt_number(columns = 2) %>%  tab_header(
-    title = "Not Effective Projects",
-    subtitle = "Model Performance Measurements"
-  ) %>% 
-  tab_footnote(
-    footnote = "Accuracy of predicted Date of Effectiveness vs. Actual",
-    locations = cells_column_labels(
-      columns = 2
-    ))  %>% 
-  tab_footnote(
-    footnote = "RMSE - Root Mean Square Error (lower better)",
-    locations = cells_body(
-      columns = 1 , row  = 1
-    ))  %>% 
-  tab_footnote(
-    footnote = "RSQ - R Squared (higher better)",
-    locations = cells_body(
-      columns = 1 , row  = 2
-    ))  %>% 
-  tab_footnote(
-    footnote = "MAE - Mean Absolute Error (lower better)",
-    locations = cells_body(
-      columns = 1 , row  = 3
-    ))  
-```
-
-
-
-### Conclussions
-
-* The Signature to Effectiveness Model has a $R^2$ of 0.1
-
-* The presence of large outliers ($ > 2 SD$) impacts model performance
-
-* External factors (not considered here) affect the time from signature to effectiveness
 
 ## Not Disbursing Projects
 
 Analysis of the Predicted 1st Disbursement times compared to actual.
 
 ```{r, echo=FALSE}
-wrap_plots( map(c1[3:4], plot_act_pred , comp_fstd) , ncol = 2 ) + 
+wrap_plots( map(c1, plot_act_pred , comp_fstd) , ncol = 2 ) + 
   plot_annotation(
   title = 'Not Disbursing Projects',
   subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  caption = paste0('Based on a sample input of ' , nrow(comp_fstd) , ' projects')
 )
 ```
 
-Analysis of Residuals
+### Analysis of Residuals
+
+The Residual is defined as $Residual = R_i = (Y_{act} - Y_{est})$ where $Y$ is the output or predicted variable
+
+The Standardized Residual is defined as 
+
+$$S_{i} = \frac{R_i}{\sqrt{\frac{\sum (Y_{act} - Y_{est})^2}{n - 2}}} = \frac{Residual_i}{Standard~Deviation~of~Residual_i} $$
 
 ```{r echo=FALSE, message=FALSE,}
-p1 <- plot_res(c1[3] , comp_fstd) 
+p1 <- plot_res(c1[1] , comp_fstd) 
 
-p2 <- plot_std_res(c1[3] , comp_fstd) 
+p2 <- plot_std_res(c1[1] , comp_fstd) 
 
 (p1 | p2) + 
   plot_annotation(
   title = 'Not Disbursing Projects',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  caption = paste0('Based on a sample input of ' , nrow(comp_fstd) , ' projects')
   )
 
 ```
 
-Outliers
+### Outlier value detection
+
+Values where $S_{res} > 2$ are considered as Outliers
 
 ```{r echo=FALSE}
-outlier_tbl( c1[3] ,  c2[3] , c2[4] , comp_fstd) %>% 
+outlier_tbl( c1[1] ,  c2[1] , c2[2] , comp_fstd) %>% 
     tab_header(
     title = "Model Outliers - Not Disbursing Projects",
     subtitle = "Date of 1st Disb."
@@ -559,7 +369,7 @@ outlier_tbl( c1[3] ,  c2[3] , c2[4] , comp_fstd) %>%
 
 ```{r echo=FALSE}
 comp_fstd %>% 
-  yardstick::metrics(days_from_effectiveness_to_first_disbursement_act, days_from_effectiveness_to_first_disbursement ) %>%  select(-2) %>%
+  yardstick::metrics(days_from_approval_to_first_disbursement_act, days_from_approval_to_first_disbursement ) %>%  select(-2) %>%
   mutate( .metric = str_to_upper(.metric)) %>% 
   gt() %>%  
 fmt_number(columns = 2) %>%  tab_header(
@@ -590,43 +400,43 @@ fmt_number(columns = 2) %>%  tab_header(
 
 ### Conclussions
 
-* The Effectiveness to First Disbursement Model has a $R^2$ of 0.03, which signifies that the model is unable to account for a majority of the variation in the output
+* The Approval to First Disbursement Model has a $R^2$ of 0.56, which signifies that the model is mostly able account for a majority of the variation in the output
 
-* The presence of large outliers ($ > 2 SD$) impacts model performance
+* The presence of a few large outliers ($ > 2 SD$) impacts model performance
 
-* External factors (not considered here) affect the time from effectiveness to first disbursements
+* Other external factors (not considered here) may be affecting the time from approval to first disbursement
 
-### Disbursing Projects
+## Disbursing Projects
 
-Analysis of the Predicted 1st to last Disbursement times compared to actual.
+Analysis of the Predicted First to Last Disbursement times compared to actual.
 
 ```{r, echo=FALSE}
-wrap_plots( map(c1[4], plot_act_pred , comp_fstd)  ) + 
+wrap_plots( map(c1[2], plot_act_pred , comp_lstd)  ) + 
   plot_annotation(
   title = 'Disbursing Projects',
   subtitle = 'Predicted vs. Actual (days)',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  caption = paste0('Based on a sample input of ' , nrow(comp_lstd) , ' projects')
 )
 ```
 
-Analysis of Residuals
+### Analysis of Residuals
 
 ```{r echo=FALSE,  message=FALSE, warning=FALSE}
-p1 <- plot_res(c1[4] , comp_lstd) 
+p1 <- plot_res(c1[2] , comp_lstd) 
 
-p2 <- plot_std_res(c1[4] , comp_lstd) 
+p2 <- plot_std_res(c1[2] , comp_lstd) 
 
 (p1 | p2) + 
   plot_annotation(
   title = 'Disbursing Projects',
-  caption = paste0('Based on a sample input of ' , nrow(comp_sig) , ' projects')
+  caption = paste0('Based on a sample input of ' , nrow(comp_lstd) , ' projects')
   )
 ```
 
-Outliers
+### Analysis of Outliers
 
 ```{r echo=FALSE}
-outlier_tbl( c1[4] ,  c2[4] , c2[5] , comp_lstd) %>% 
+outlier_tbl( c1[2] ,  c2[2] , c2[3] , comp_lstd) %>% 
     tab_header(
     title = "Model Outliers - Not Disbursing Projects",
     subtitle = "Date of Final Disb."
@@ -667,11 +477,11 @@ fmt_number(columns = 2) %>%  tab_header(
 
 ### Conclussions
 
-* The First to Final Disbursement Model has a $R^2$ of 0.39
+* The First to Final Disbursement Model has a $R^2$ of 0.5
 
-* The presence of large outliers ($ > 2 SD$) impacts model performance
+* The presence of  a few large outliers ($ > 2 SD$) maybe impacting the model performance
 
-* External factors (not considered here) affect the time from first to final disbursement
+* Other external factors (not considered here) maybe affecting the time from first to final disbursement
 
 
 # Analysis 2 - Testing of Model Features
@@ -689,17 +499,17 @@ The test data was generated as follows:
 
 ```{r datainput check, include=FALSE}
 
-model_input_check <- read_csv(file = paste0(input_dir, "isdb_test_prjs_check.csv")) %>% 
+model_input_check <- read_csv(file = paste0(input_dir, "isdb_test_trade_check.csv")) %>% 
   select( -...1) 
 
-model_output_check <- readRDS( file = paste0(output_dir , "model_output_check.rda")) %>% 
+model_output_check <- readRDS( file = paste0(output_dir , "model_trade_output_check.rda")) %>% 
   janitor::clean_names() 
 
 model_output_check <- model_output_check %>% 
-  inner_join( model_input_check %>%  select(where( is.character ) , -project_title, -project_title_org , -profile ) , by = c("project_id"))
+  inner_join( model_input_check %>%  select(where( is.character ) , -project_title, -project_title_org  ) , by = c("project_id"))
 
 
-profiles_check <- readRDS(file = paste0(output_dir , "full_disb_profile_check.rda")) %>% 
+profiles_check <- readRDS(file = paste0(output_dir , "full_trade_disb_profile_check.rda")) %>% 
   janitor::clean_names()
 
 ```
@@ -731,34 +541,23 @@ check_cap <- function( ctype , mtype ) {
 }
 
 
-ctypes <- c("NSCAP" , "NECAP" , "NDCAP")
+ctypes <- c( "NDCAP")
 
 #check_ptype( "NDCAP" , c1[3]  )
-map2_dfr( ctypes , c1[1:3]  , check_cap) %>% 
-  mutate( check_type = 
-            case_when( check_type == "NSCAP" ~ "Not Signed Cap",
-                       check_type == "NECAP" ~ "Not Effective Cap",
-                       T ~ "Not Disbursing Cap")) %>% 
+map2_dfr( ctypes , c1[1]  , check_cap) %>% 
+  mutate( check_type = if_else(check_type == "NDCAP" ,"Not Disbursing Cap" , "XXX" )) %>% 
   gt() %>% 
   tab_header(title = "Check of applying limits (Cap) on Project Milestones")
 
 ```
 
-As shown above all of the tests performed have passed.
+As shown above all of the tests performed have **passed**.
 
 ### Milestone Override
 
 A series of tests were done to check the effectiveness of applying overrides on the Project milestones.
 
 ```{r echo=FALSE}
-
-t <- model_output_check %>%  
-  filter( check_type == "NSOVR") %>% 
-  select( project_id , date_of_signature_override , date_of_signature ) %>% 
-  mutate(
-    check_ovr_signature = date_of_signature_override == date_of_signature
-  )
-      
 
 check_ovr <- function( ctype , mtype ) {
   
@@ -779,25 +578,23 @@ check_ovr <- function( ctype , mtype ) {
 } 
 
 
-cm <- c ("signature" , "effectiveness" , "first_disbursement" , "final_disbursement" )
+cm <- c ("first_disbursement" , "final_disbursement" )
 
-ctypes <- c( "NSOVR" , "NEOVR" , "NDOVR" , "CDOVR" )
+ctypes <- c( "NDOVR" , "CDOVR" )
 
 
 #check_ovr( ctypes[1] , cm[1] )
 
 map2_dfr( ctypes , cm  , check_ovr) %>% 
   mutate( check_type = 
-            case_when( check_type == "NSOVR" ~ "Not Signed Override",
-                       check_type == "NEOVR" ~ "Not Effective Override",
-                       check_type == "NDOVR" ~ "Not Disbursing Override",
+            case_when( check_type == "NDOVR" ~ "Not Disbursing Override",
                        T ~ "Disbursing Override")) %>% 
   gt() %>% 
   tab_header(title = "Check of applying overrides on Project Milestones")
 
 ```
 
-As shown above all of the tests performed have passed.
+As shown above all of the tests performed have **passed**.
 
 
 # Analysis 3 - Testing with Synthetic Data
@@ -810,44 +607,25 @@ The simulated data was generated as follows:
 4.  Merge with External DS - For external indicators
 5.  Write to File - Save to CSV file in format accepted by the model
 
-```{r eval=FALSE, include=FALSE}
-
-library(DiagrammeR)
-
-grViz("digraph test{
-  graph [layout = dot, rankdir = LR]
-  
-  node [shape = rectangle]        
-  rec1 [label = 'Step 1. Sample Train DS']
-  rec2 [label = 'Step 2. Create Project Types']
-  rec3 [label =  'Step 3. Randomize Fields']
-  rec4 [label = 'Step 4. Merge with External DS']
-  rec5 [label = 'Step 5. Write to File']
-  
-  
-  # edge definitions with the node IDs
-  rec1 -> rec2 -> rec3 -> rec4 -> rec5
-  }")
-
-```
 
 ```{r datainput sim, include=FALSE}
 
-model_input_sim <- read_csv(file = paste0(input_dir, "isdb_test_prjs_sim.csv")) %>% 
+model_input_sim <- read_csv(file = paste0(input_dir, "isdb_test_trade_sim.csv")) %>% 
   select( -...1) %>% 
   mutate( proj_type = str_replace(project_title,  '-.*' , ''))
+ 
 
-model_output_sim <- readRDS( file = paste0(output_dir , "model_output_sim.rda")) %>% 
+model_output_sim <- readRDS( file = paste0(output_dir , "model_trade_output_sim.rda")) %>% 
   janitor::clean_names() %>% 
   mutate(
     proj_type = str_replace(project_title,  '-.*' , '')
   )
 
 model_output_sim <- model_output_sim %>% 
-  inner_join( model_input_sim %>%  select(where( is.character ) , -proj_type , -project_title, -project_title_org  ) , by = c("project_id"))
+  inner_join( model_input_sim %>%  select(where( is.character ) , -project_title, -proj_type, -project_title_org  ) , by = c("project_id"))
 
 
-profiles_sim <- readRDS(file = paste0(output_dir , "full_disb_profile_sim.rda")) %>% 
+profiles_sim <- readRDS(file = paste0(output_dir , "full_trade_disb_profile_sim.rda")) %>% 
   janitor::clean_names()
 
 ```
@@ -881,12 +659,13 @@ plot_dcvar <- function(var) {
   ggplot(aes( dc_var , n)) +
   geom_col(aes(fill=proj_type), show.legend = FALSE) +
   coord_flip() +
+  xlab(var) +
   tidytext::scale_x_reordered() +
   facet_wrap(~proj_type, scales = "free_y") 
   
 }
 
-l <- c( "sector" , "sub_mode_of_finance" ,  "income_classification")
+l <- c( "sector" , "project_type" ,  "income_classification" , "rate_type" , "revolving")
 
 map(l , plot_dcvar)
 
@@ -930,7 +709,7 @@ tibble(
 ```
 
 
-The 2 model outputs **do not match**, further investigation is needed.
+The output of the model calculated from the 2 different methods **match**.
 
 
 ## Distribution of Times - Output Data
@@ -939,8 +718,7 @@ The output of the model is analysed to better understand the spread of values pr
 
 ```{r eval=FALSE, include=FALSE}
 t <- model_output_sim %>% 
-  select(proj_type , days_from_approval_to_signature , days_from_signature_to_effectiveness,
-         days_from_effectiveness_to_first_disbursement , days_from_first_to_final_disbursement)
+  select(proj_type , days_from_approval_to_first_disbursement , days_from_first_to_final_disbursement)
 
 plot_boxplot(t, by = "proj_type" , ncol = 2)
 
@@ -959,7 +737,7 @@ get_each <- function(x ,data){
   
 }
 
-l2 <- c("approval_to_signature" , "signature_to_effectiveness" , "effectiveness_to_first" ,"first_to_final" )
+l2 <- c( "approval_to_first" ,"first_to_final" )
 
 
 ```
@@ -992,100 +770,13 @@ plot_hist <- function(data_src , var){
 }
 ```
 
-## Not Signed Projects
-
-```{r echo=FALSE}
-
-data_in <- model_output_sim %>% 
-  filter(proj_type == "Not Signed" )
-
-map_dfr(l2, get_each , data_in ) %>% 
-  gt() %>% 
-    fmt_number(columns = 2:6) %>% 
-  tab_header(
-    title = "Projection - Not Signed Projects",
-    subtitle = "Model Output Milestone Time Analysis"
-  )
-
-
-
-
-p1 <- plot_hist(data_in , data_in$days_from_approval_to_signature)
-  
-  
-p2 <- plot_hist(data_in , data_in$days_from_signature_to_effectiveness)
-
-
-p3 <- plot_hist(data_in , data_in$days_from_effectiveness_to_first_disbursement)
-  
-  
-p4 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
-  
- 
-
-(p1 | p2) / (p3 | p4) + plot_annotation(
-  title = 'Model Output - Projects Not Signed',
-  subtitle = 'Distribution of projected time-taken by milestones(months)',
-  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Approved but not Signed projects')
-)
-
-
-#t <- map(l4 , plot_dist2 , model_output_sim %>% filter(proj_type == "Not Signed" ) )
-
-#map( 1:4 , ~wrap_plots(t[[.x]]) )
-
-```
-
-## Not Effective Projects
-
-```{r echo=FALSE}
-
-data_in <- model_output_sim %>% 
-  filter(proj_type == "Not Effective" )
-
-map_dfr(l2[2:4], get_each , data_in) %>% 
-  gt() %>% 
-    fmt_number(columns = 2:6) %>% 
-  tab_header(
-    title = "Projection - Not Effective Projects",
-    subtitle = "Model Output Milestone Time Analysis"
-  )
-
-p1 <- plot_hist(data_in , data_in$days_from_signature_to_effectiveness)
-
-
-p2 <- plot_hist(data_in , data_in$days_from_effectiveness_to_first_disbursement)
-  
-  
-p3 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
-  
- 
-
-(p1 | p2) / (p3 ) + plot_annotation(
-  title = 'Model Output - Projects Not Signed',
-  subtitle = 'Distribution of projected time-taken by milestones(months)',
-  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Approved but not Signed projects')
-)
-
-
-#t <- map(l4 , plot_dist2 , model_output_sim %>% filter(proj_type == "Not Signed" ) )
-
-#map( 1:4 , ~wrap_plots(t[[.x]]) )
-
-# t <- map(l4[2:4] , plot_dist2 , model_output_sim %>% filter(proj_type == "Not Effective") )
-# 
-# 
-# map( 1:3 , ~wrap_plots(t[[.x]] , ncol = 2) )
-
-```
-
 ## Not Disbursing Projects
 
 ```{r echo=FALSE}
 data_in <- model_output_sim %>% 
   filter(proj_type == "Not Disbursing" )
 
-map_dfr(l2[3:4], get_each , data_in) %>% 
+map_dfr(l2, get_each , data_in) %>% 
   gt() %>% 
     fmt_number(columns = 2:6) %>% 
   tab_header(
@@ -1093,7 +784,7 @@ map_dfr(l2[3:4], get_each , data_in) %>%
     subtitle = "Model Output Milestone Time Analysis"
   )
 
-p1 <- plot_hist(data_in , data_in$days_from_effectiveness_to_first_disbursement)
+p1 <- plot_hist(data_in , data_in$days_from_approval_to_first_disbursement)
   
   
 p2 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
@@ -1103,7 +794,7 @@ p2 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 (p1 | p2)  + plot_annotation(
   title = 'Model Output - Projects Not Disbursing',
   subtitle = 'Distribution of projected time-taken by milestones(months)',
-  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Approved but not Signed projects')
+  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Approved but not Disbursing projects')
 )
 
 # t <- map(l4[3:4] , plot_dist2 , model_output_sim %>% filter(proj_type == "Not Disbursing") )
@@ -1120,7 +811,7 @@ p2 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 data_in <- model_output_sim %>% 
   filter(proj_type == "Disbursing" )
 
-map_dfr(l2[4], get_each , data_in) %>% 
+map_dfr(l2[2], get_each , data_in) %>% 
   gt() %>% 
     fmt_number(columns = 2:6) %>% 
   tab_header(
@@ -1135,7 +826,7 @@ p1 <- plot_hist(data_in , data_in$days_from_first_to_final_disbursement)
 p1  + plot_annotation(
   title = 'Model Output - Disbursing Projects',
   subtitle = 'Distribution of projected time-taken by milestones(months)',
-  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Approved but not Signed projects')
+  caption = paste0('Based on a sample input of ' , nrow(data_in) , ' Disbursing projects')
 )
 
 # t <- map(l4[4] , plot_dist2 , model_output_sim %>% filter(proj_type == "Disbursing") )
@@ -1157,54 +848,7 @@ plot_boxplot(t, by = "proj_type" , ncol = 2)
 
 ```
 
-```{r eval=FALSE, include=FALSE}
-get_each <- function(x ,data){
-  data %>% 
-    summarise(
-    across( (starts_with("days_from") & contains(x) & !contains("_cap")) , 
-            list(mean = mean , sd = sd , min = min , max = max , median = median),  
-            .names = "{.fn}" ) ,
-  ) %>% 
-    mutate(measure = x) %>% 
-    relocate(measure)
-  
-}
 
-l2 <- c("approval_to_signature" , "signature_to_effectiveness" , "effectiveness_to_first" ,"first_to_final" )
-
-
-map_dfr(l2, get_each , model_output_sim %>% filter( proj_type == "Not Signed")) %>% 
-  gt() %>% 
-    fmt_number(columns = 2:6) %>% 
-  tab_header(
-    title = "Projection - Not Signed Projects",
-    subtitle = "Model Output Milestone Time Analysis"
-  )
-
-
-map_dfr(l2, get_each , ops_data %>% filter( proj_type != "Not Signed",
-                                            proj_type != "Not Effective")) %>% 
-  gt() %>% 
-    fmt_number(columns = 2:6) %>% 
-  tab_header(
-    title = "Training Data Set",
-    subtitle = "Milestone Time Analysis"
-  )
-
-
-get_each(l2[1] , ops_data %>% filter( proj_type_code > 1 ) ) %>% 
-  bind_rows(get_each(l2[2] , ops_data %>% filter( proj_type_code > 2 ))) %>% 
-  bind_rows(get_each(l2[3] , ops_data %>% filter( proj_type_code > 3 ))) %>% 
-  bind_rows(get_each(l2[4] , ops_data %>% filter( proj_type_code > 4 )) ) %>% 
-  gt() %>% 
-    fmt_number(columns = 2:6) %>% 
-  tab_header(
-    title = "Training Data Set",
-    subtitle = "Milestone Time Analysis"
-  )
-
-
-```
 
 # Analysis 4 - Disbursement Profiles
 
@@ -1226,18 +870,6 @@ plot_profile <- function(mtype) {
 }
 
 
-p1 <- plot_profile( "NS") +
-  labs(title = "Not Signed")
-
-p2 <- plot_profile( "NE") +
-  labs(title = "Not Effective")
-
-( p1 | p2) + plot_annotation(
-  title = 'Disbursement Profiles',
-  subtitle = 'Based on Project Type',
-  caption = "Gray - Predicted Profile, Blue - Smoothened Profile , Black - Linear ref. line"
-  )
-
 p3 <- plot_profile( "ND") +
   labs(title = "Not Disbursing")
 
@@ -1252,9 +884,9 @@ p4 <- plot_profile( "CD") +
 
 ```
 
-* The disbursement profiles for Not Signed, Not Effective and Not Disbursing Projects are very similar and are almost linear
+* The disbursement profiles for Not Disbursing and Disbursing Projects are very similar and are almost linear
 
-* The disbursement profile for the Disbursing projects, is less linear as the amount already disbursed determines the starting point of the cumulative disbursement percentage
+<!-- * The disbursement profile for the Disbursing projects, is less linear as the amount already disbursed determines the starting point of the cumulative disbursement percentage -->
 
 * All projects are assumed to disburse to 100% in the model, but in real life scenarios project may disburse less than 100% of their approved amount
 

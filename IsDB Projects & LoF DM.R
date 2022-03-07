@@ -6,12 +6,16 @@
   options(scipen = 999)
   setwd(dirname(rstudioapi::getSourceEditorContext()$path))
   
+  
+  library(tidyverse)
   library(data.table)   #Ignore the warning messages
-  library(ggplot2)
-  library(openxlsx)
+  #library(ggplot2)
+  #library(openxlsx)
   #library(xlsx)
-  library(plyr)
-  library(dplyr)
+  #library(plyr)
+  #library(dplyr)
+  
+  
   library(readxl)
   library(svDialogs)      
   library(DescTools)      
@@ -373,6 +377,11 @@ for (id in 1:nrow(model_input)) {     #One project at a time
   
   # Disbursement Profile
   
+  
+  # if ( proj$project_id == "CD004" ){
+  #   browser()
+  # }
+  
   if (applicability == "No") {        #If Catch up/Shift isn't applicable
     disb_profile <- t(disb_profile_mapping[which(disb_profile_mapping$Profile == profile), 2:ncol(disb_profile_mapping)])      #Disbursement Profile according to Profile
     disb_profile <- as.data.frame(disb_profile, stringsAsFactors = F)
@@ -592,12 +601,16 @@ colnames(model_output) <- c("Project ID", "Project Title", "Approval Amount (USD
 write.csv(x = model_output, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
+saveRDS(model_output , file = paste0(output_dir , "model_output.rda"))
+
 
 # Disbursement Profiles
 
 write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
+
+saveRDS(full_disb_profile , file = paste0(output_dir , "full_disb_profile.rda"))
 
 # Disbursement Summary
 

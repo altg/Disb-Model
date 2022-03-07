@@ -41,6 +41,16 @@ file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_comp.rda"
 file.info("Outputs/model_output_comp.rda")$mtime
 
 
+# Run Check 
+
+
+run_all_rmd("Gen Test Check Data.Rmd")
+
+source("IsDB Projects & LoF DM.R")
+
+file.copy("Inputs/isdb_test_prjs.csv", "Inputs/isdb_test_prjs_check.csv" , overwrite = T) 
+file.copy("Outputs/model_output.rda" , "Outputs/model_output_check.rda" , overwrite = T)
+file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_check.rda" , overwrite = T)
 
 # Profiling
 

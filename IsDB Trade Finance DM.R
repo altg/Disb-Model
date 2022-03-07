@@ -7,7 +7,6 @@
   setwd(dirname(rstudioapi::getSourceEditorContext()$path))
   
   library(tidyverse)
-  
   library(data.table)   #Ignore the warning messages
   library(readxl)
   library(svDialogs)      
@@ -55,7 +54,7 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 #model_input <- fread(input = paste0(input_dir, "IsDB Trade Finance Disbursement Model Input.csv"), na.strings = "", stringsAsFactors = F)
 
-model_input <- fread(input = paste0(input_dir, "isdb_test_trade.csv"), na.strings = "", stringsAsFactors = F)
+model_input <- fread(input = paste0(input_dir, "isdb_test_trade.csv"),  stringsAsFactors = F)
 
 
 
@@ -90,6 +89,7 @@ for (id in 1:nrow(model_input)) {     #One project at a time
   print( proj$project_id)
   
   
+  
   date_of_evaluation <- proj$evaluation_date
   amount_disb_eval_date <- proj$amount_disbursed_at_evaluation_date_usd
   act_perc_disb_eval_date <- (amount_disb_eval_date/proj$approval_amount_usd) * 100
@@ -104,10 +104,6 @@ for (id in 1:nrow(model_input)) {     #One project at a time
       
       # Calculating CoefficientsCPCOLS <- c("#1f78b4", "#33a02c", "#e31a1c")
 
-ggplot(iris, aes(Sepal.Length, Petal.Length)) +
-      geom_point(aes(col = Species)) +
-      scale_colour_manual(values = CPCOLS)
-      
       country_sub_region <- app_firstdisb_reg[which(app_firstdisb_reg$input == proj$country_sub_region),]$value   
       project_type <- app_firstdisb_reg[which(app_firstdisb_reg$input == proj$project_type),]$value
       income_classification <- app_firstdisb_reg[which(app_firstdisb_reg$input == proj$income_classification),]$value
@@ -166,7 +162,7 @@ ggplot(iris, aes(Sepal.Length, Petal.Length)) +
   }
   
   
-  
+ 
   ### First to Final Disbursement Model
   
   if (is.na(proj$date_of_final_disbursement_override)) {     #Override check
@@ -443,12 +439,15 @@ colnames(model_output) <- c("Project ID", "Project Title", "Approval Amount (USD
 write.csv(x = model_output, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
+saveRDS(model_output , file = paste0(output_dir , "model_trade_output.rda"))
 
 # Disbursement Profiles
 
 write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
           na ="", row.names = F)
 
+
+saveRDS(full_disb_profile , file = paste0(output_dir , "full_trade_disb_profile.rda"))
 
 # Disbursement Summary
 

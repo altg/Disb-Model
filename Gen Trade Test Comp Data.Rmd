@@ -42,10 +42,6 @@ trade_data_in <- trade_data_in %>%
 
 
 ```{r globalparam}
-start_date <- dmy("01/01/2020")
-
-end_date <- dmy("01/01/2023")
-
 sample_size <- 100
 ```
 
@@ -94,33 +90,51 @@ countries <- trade_data_in %>%
 
 
 ```{r}
-rows <-  nrow(trade_data_in)
+#rows <-  nrow(trade_data_in)
 
-s_countries <- sample( countries$country , size = rows , replace = T)
+#s_countries <- sample( countries$country , size = rows , replace = T)
 
 trade_data <- 
   trade_data_in %>% 
+  filter( !country %in% c("Kenya" , "Malawi") , 
+          date_of_approval <= date_of_first_disb ) %>% 
+  mutate(
+  sector = str_replace(sector , "Financial Servc" , "Financial Services" ),
+          sector = str_replace(sector , "Food & Agricult" , "Food & Agriculture" ) ) %>% 
+  filter( !project_type %in% c("LC Confirmation")) %>% 
   transmute(
     project_id = operation_id,                                 
     project_title = NA,                               
-    country = s_countries,                                     
+    country = country,                                     
     sector  = sector,                                      
     approval_amount_usd = idb_approval_amt_usd,                         
     project_type = project_type,                               
     #income_classification =  NA,                     
     #dealing_with_construction_permits = NA,           
-    rate_type = rate_type,                                  
+    rate_type = rate_description,                                  
     revolving = revolving_oneoff,                                  
     evaluation_date = NA,                             
     amount_disbursed_at_evaluation_date_usd = NA,   
     date_of_approval = date_of_approval,                            
-    date_of_first_disbursement = NA,                 
+    date_of_first_disbursement = date_of_first_disb,                 
     days_from_approval_to_first_disbursement_cap = NA,
     date_of_first_disbursement_override = NA,         
-    date_of_final_disbursement_override = NA
+    date_of_final_disbursement_override = NA,
+    date_of_first_disbursement_act = date_of_first_disbursement,
+    date_of_last_disb_act = date_of_last_disb,
+    status
   ) %>% 
   left_join(countries , by = c ("country" = "country")) %>% 
-  relocate( income_classification , .after = project_type ) 
+  relocate( income_classification , .after = project_type ) %>%
+  mutate(
+    proj_type_code = case_when(
+      status %in% c("Cancelled" , "Terminated") ~ 0,
+      (status == "Active" & is.na(date_of_first_disbursement)) ~ 1, # Not Disbursing
+      status == "Active" ~ 2, # Disbursing
+      status == "Completed" & !is.na(date_of_first_disbursement) ~ 3,
+      T ~ 0
+    )
+  ) 
 
 ```
 
@@ -144,43 +158,20 @@ dealing_with_cp <- read_excel(hdfile,
 # Approved not Disbursing
 
 ```{r}
-set.seed(5467)
-
-base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
-
-apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
-
-apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
-
-eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
-
-eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
-
-s_sectors <-  sample( sectors$sector , size = sample_size , replace = T )
-
-s_rate_types <- sample( rate_types$rate_description , size = sample_size , replace = T , prob = rate_types$freq )
-
-s_revolving <- sample( revolving$revolving_oneoff , size = sample_size , replace = T , prob = revolving$freq )
-
-s_project_types <- sample( project_types$project_type , size = sample_size , replace = T , prob = project_types$freq )
+set.seed(1234)
 
 trade_data_fstd <- 
   trade_data %>% 
-  slice_sample(n = sample_size) %>%
+  filter(proj_type_code > 1)  %>% # Not Disbursing
+  slice_sample(n = sample_size  ) %>%
   mutate(
     project_id_org = project_id,
     project_title_org = project_title,
     project_id = paste0( "ND", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Not Disbursing-", formatC(row_number(), width=3, flag="0") ),
-    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
-    evaluation_date = date_of_approval  %m+% eval_offset_m + eval_offset_d
-  ) %>% 
-  mutate(
-    sector = s_sectors,
-    rate_type = s_rate_types,
-    revolving = s_revolving,
-    project_type = s_project_types
-  )
+    evaluation_date = date_of_approval,
+    date_of_first_disbursement = NA
+  ) 
 
 trade_data_out <- trade_data_fstd
 
@@ -195,56 +186,22 @@ trade_data_out <- trade_data_fstd
 ```{r}
 set.seed(5467)
 
-base_date <- sample(seq( start_date , end_date , by = "day") , size = sample_size , replace = T)
-
-apr_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
-
-apr_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
-
-eval_offset_m <- months(sample( seq(1,12) , size = sample_size , replace = T))
-
-eval_offset_d <- sample( seq(1:30) , size = sample_size , replace = T)
-
-fstd_offset_m <- months(sample( seq(1,12) , size = sample_size, replace = T))
-
-fstd_offset_d <- sample( seq(1:30) , size = sample_size, replace = T)
-
-pct_disb <- sample( seq(0,1,0.0125) , size = sample_size, replace = T)
-
-s_sectors <-  sample( sectors$sector , size = sample_size , replace = T )
-
-s_rate_types <- sample( rate_types$rate_description , size = sample_size , replace = T , prob = rate_types$freq )
-
-s_revolving <- sample( revolving$revolving_oneoff , size = sample_size , replace = T , prob = revolving$freq )
-
-s_project_types <- sample( project_types$project_type , size = sample_size , replace = T , prob = project_types$freq )
-
-
 
 trade_data_lstd <- 
   trade_data %>% 
-  slice_sample(n = sample_size) %>% 
+  filter(proj_type_code > 2)  %>% # Disbursing
+  slice_sample(n = sample_size  ) %>%
   mutate(
     project_id_org = project_id,
     project_title_org = project_title,
     project_id = paste0( "CD", formatC(row_number(), width=3, flag="0") ),
     project_title = paste0( "Disbursing-", formatC(row_number(), width=3, flag="0") ),
-    date_of_approval = base_date %m+% apr_offset_m + apr_offset_d,
-    date_of_first_disbursement = date_of_approval %m+% fstd_offset_m + fstd_offset_d,
-    evaluation_date = date_of_first_disbursement  %m+% eval_offset_m + eval_offset_d,
-    amount_disbursed_at_evaluation_date_usd = approval_amount_usd * pct_disb
-  ) %>% 
-  mutate(
-    sector = s_sectors,
-    rate_type = s_rate_types,
-    revolving = s_revolving,
-    project_type = s_project_types
-  )
+    evaluation_date = date_of_first_disbursement
+  ) 
 
 trade_data_out <- 
   trade_data_out %>% 
-  bind_rows(trade_data_lstd) %>% 
-  mutate(amount_disbursed_at_evaluation_date_usd = replace_na(amount_disbursed_at_evaluation_date_usd , 0))
+  bind_rows(trade_data_lstd) 
 ```
 
 

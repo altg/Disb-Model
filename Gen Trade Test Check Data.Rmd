@@ -1,0 +1,239 @@
+---
+title: "Generate Trade Test Check Data"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+
+```
+
+
+```{r envparam}
+
+dir <- getwd()   #Updates the path to the directory where the R Code is present
+input_dir <- paste0(dir, "/Inputs/") 
+
+sample_size <- 100
+
+caps <- c( 90 , 180 , 360)
+
+caps_disb <- c(3:7) * 360 # 3 to 7 years disb time cap
+
+```
+
+
+```{r loaddata}
+trade_data_in <- read_excel("Tests/idb_trade_data.xlsx", 
+    sheet = "trade_data")
+
+countries_in <- readRDS("countries.RDS")
+
+countries_in <- countries_in %>% 
+  add_row(country = "Kenya" , income_classification = "Lower middle income"  ) %>% 
+  add_row(country = "Malawi" , income_classification = "Low income"  )
+
+trade_data_in <- trade_data_in %>% 
+  left_join(countries_in , by = c("country")) %>% 
+  filter(country != "Regional")
+
+
+countries <- trade_data_in %>% 
+  distinct(country , income_classification) %>% 
+  filter( !country %in% c("Kenya" , "Malawi"))
+
+```
+
+
+```{r}
+eval_date <- dmy("01-01-2021")
+
+set.seed(678)
+
+trade_data <- 
+  trade_data_in %>% 
+  filter( !country %in% c("Kenya" , "Malawi") , 
+          date_of_approval <= date_of_first_disb ) %>% 
+  mutate(
+  sector = str_replace(sector , "Financial Servc" , "Financial Services" ),
+          sector = str_replace(sector , "Food & Agricult" , "Food & Agriculture" ) ) %>% 
+  filter( !project_type %in% c("LC Confirmation")) %>% 
+  transmute(
+    project_id = operation_id,                                 
+    project_title = NA,                               
+    country = country,                                     
+    sector  = sector,                                      
+    approval_amount_usd = idb_approval_amt_usd,                         
+    project_type = project_type,                               
+    #income_classification =  NA,                     
+    #dealing_with_construction_permits = NA,           
+    rate_type = rate_description,                                  
+    revolving = revolving_oneoff,                                  
+    evaluation_date = NA,                             
+    amount_disbursed_at_evaluation_date_usd = NA,   
+    date_of_approval = date_of_approval,                            
+    date_of_first_disbursement = date_of_first_disb,                 
+    days_from_approval_to_first_disbursement_cap = NA,
+    date_of_first_disbursement_override = NA,         
+    date_of_final_disbursement_override = NA,
+    date_of_first_disbursement_act = date_of_first_disbursement,
+    date_of_final_disbursement = date_of_last_disb,
+    status
+  ) %>% 
+  left_join(countries , by = c ("country" = "country")) %>% 
+  relocate( income_classification , .after = project_type ) %>%
+  mutate(
+    proj_type_code = case_when(
+      status %in% c("Cancelled" , "Terminated") ~ 0,
+      (status == "Active" & is.na(date_of_first_disbursement)) ~ 1, # Not Disbursing
+      status == "Active" ~ 2, # Disbursing
+      status == "Completed" & !is.na(date_of_first_disbursement) ~ 3,
+      T ~ 0
+    )
+  ) 
+
+# %>% 
+#   slice_sample(n=100)
+
+```
+
+
+
+# Load indicator data
+
+
+## Dealing with CPs
+```{r}
+
+hdfile <- "Inputs/Historical Data  Governance Indicators and Rating_157428296.xlsx"
+
+dealing_with_cp <- read_excel(hdfile, 
+    sheet = "DealingWithCPs", skip = 3) %>% 
+  rename( country = ...1 ) %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    cols = starts_with("x"),
+    names_to = "year",
+    values_to = "dealing_with_construction_permits"
+  ) %>% 
+  mutate( year = as.integer( str_remove(year , "x") ) )
+
+```
+
+
+
+
+
+#  Approved not Disbursing
+```{r}
+set.seed(1234)
+
+test_data_fstd <- 
+  trade_data %>% 
+  filter(proj_type_code > 1)  %>% # Not Disb projects
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_id_org = project_id,
+    project_title_org = project_title,
+    project_id = paste0( "ND", formatC(row_number(), width=3, flag="0") ),
+    project_title = paste0( "Not Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    evaluation_date = date_of_approval
+  )
+
+
+days_cap <- sample( caps , size = sample_size / 2  , replace = T )
+
+test_cap <- 
+  test_data_fstd %>% 
+  slice_head( n  = sample_size / 2 ) %>% 
+  mutate(
+    days_from_approval_to_first_disbursement_cap = days_cap,
+    check_type  = "NDCAP"
+  )
+
+test_ovr <- 
+  test_data_fstd %>% 
+  slice_tail( n  = sample_size / 2 ) %>% 
+  mutate(
+    date_of_first_disbursement_override = date_of_first_disbursement,
+    check_type  = "NDOVR"
+  )
+
+test_data_in <- 
+  test_cap %>%  
+  bind_rows(test_ovr) %>% 
+  mutate(
+    date_of_first_disbursement = NA
+  )
+
+
+```
+
+# Disbursing Projects
+
+```{r}
+
+set.seed(5467)
+
+test_data_lstd <- 
+  trade_data %>% 
+  filter(proj_type_code > 2)  %>% # Disb projects
+  slice_sample(n = sample_size) %>% 
+  mutate(
+    project_id_org = project_id,
+    project_title_org = project_title,
+    project_id = paste0( "CD", formatC(row_number(), width=3, flag="0") ),
+    project_title = paste0( "Disbursing-", formatC(row_number(), width=3, flag="0") ),
+    evaluation_date = date_of_first_disbursement
+  )
+
+
+test_ovr <- 
+  test_data_lstd %>% 
+  #slice_tail( n  = sample_size / 2 ) %>% 
+  mutate(
+    date_of_final_disbursement_override = date_of_final_disbursement,
+    check_type  = "CDOVR"
+  )
+
+test_data_in <- 
+  test_data_in %>% 
+  bind_rows(test_ovr) %>% 
+  mutate(
+    amount_disbursed_at_evaluation_date_usd = replace_na(amount_disbursed_at_evaluation_date_usd , 0)
+  )
+
+```
+
+# Merge additional data with the main data
+
+```{r}
+
+set.seed(2345)
+
+
+trade_data_out <- test_data_in %>% 
+  mutate( 
+    year = case_when( year(date_of_approval) > 2020 ~ as.integer(2020),
+    TRUE ~ as.integer( year(date_of_approval) ) ) ) %>% 
+  left_join( dealing_with_cp , by = c("country" = "country", "year" = "year") ) %>% 
+  relocate( dealing_with_construction_permits , .before = rate_type ) %>% 
+  select(-year)
+
+
+test_data_in %>% glimpse()
+```
+
+
+# Write to data file
+```{r}
+write.csv(trade_data_out, 
+          file = paste0(input_dir, "isdb_test_trade.csv"))
+```
+
+
