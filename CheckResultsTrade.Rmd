@@ -10,6 +10,7 @@ editor_options:
   chunk_output_type: console
 ---
 
+
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(lubridate)
@@ -55,7 +56,6 @@ To achieve the above aims the following tests were developed:
 
 *-* **Analysis 3** Run the model using synthetic data (data derived from training data using sampling), with objective to see how the model performs in the presence of new / unseen data
 
-
 *-* **Analysis 4** Analysis of the disbursement profiles produced by the model
 
 # Generation of Test inputs
@@ -64,9 +64,9 @@ To achieve the above aims the following tests were developed:
 
 Types of Trade Finance Projects used in our test sample
 
-* **Not Disbursing** - Projects approved, but yet to begin disbursing
+-   **Not Disbursing** - Projects approved, but yet to begin disbursing
 
-* **Disbursing** - Projects which have been approved, and have started disbursing, but not yet to finish disbursing
+-   **Disbursing** - Projects which have been approved, and have started disbursing, but not yet to finish disbursing
 
 # Model Testing
 
@@ -88,16 +88,14 @@ When generating the test data, for each of the project types (described above) s
 
 3 different analysis was conducted on the model using 3 separate test data sets adhering to the above test data generation methodology.
 
-1. Comparison of values predicted by the model against actual values  
-2. Testing of features of the model
-3. The performance of the model in the presence of unseen / new data
-4. Analysis of the disbursement profiles to understand how they are constructed
-
+1.  Comparison of values predicted by the model against actual values\
+2.  Testing of features of the model
+3.  The performance of the model in the presence of unseen / new data
+4.  Analysis of the disbursement profiles to understand how they are constructed
 
 # Analysis 1 - Actual vs. Predicted Comparison
 
 In this analysis the objective is to ascertain the predictive performance of the model, by comparing the predicted values produced by the model with actual values. For this analysis the training data set is randomly sampled and the actual milestone values are removed and saved, before the model is run to predict these milestones. The predicted values are then compared against the saved actual values, to measure the predictive performance of the model.
-
 
 The test data was generated as follows:
 
@@ -285,8 +283,6 @@ plot_res_qq <- function(milestone , data) {
 
 ```
 
-
-
 ```{r echo=FALSE}
 outlier_tbl <- function(var , start_var , end_var ,  data) {
   
@@ -319,7 +315,6 @@ outlier_tbl <- function(var , start_var , end_var ,  data) {
 
 ```
 
-
 ## Not Disbursing Projects
 
 Analysis of the Predicted 1st Disbursement times compared to actual.
@@ -337,7 +332,7 @@ wrap_plots( map(c1, plot_act_pred , comp_fstd) , ncol = 2 ) +
 
 The Residual is defined as $Residual = R_i = (Y_{act} - Y_{est})$ where $Y$ is the output or predicted variable
 
-The Standardized Residual is defined as 
+The Standardized Residual is defined as
 
 $$S_{i} = \frac{R_i}{\sqrt{\frac{\sum (Y_{act} - Y_{est})^2}{n - 2}}} = \frac{Residual_i}{Standard~Deviation~of~Residual_i} $$
 
@@ -365,7 +360,6 @@ outlier_tbl( c1[1] ,  c2[1] , c2[2] , comp_fstd) %>%
     subtitle = "Date of 1st Disb."
   )
 ```
-
 
 ```{r echo=FALSE}
 comp_fstd %>% 
@@ -400,11 +394,11 @@ fmt_number(columns = 2) %>%  tab_header(
 
 ### Conclussions
 
-* The Approval to First Disbursement Model has a $R^2$ of 0.56, which signifies that the model is mostly able account for a majority of the variation in the output
+-   The Approval to First Disbursement Model has a $R^2$ of 0.56, which signifies that the model is mostly able account for a majority of the variation in the output
 
-* The presence of a few large outliers ($ > 2 SD$) impacts model performance
+-   The presence of a few large outliers $( > 2 SD )$ impacts model performance
 
-* Other external factors (not considered here) may be affecting the time from approval to first disbursement
+-   Other external factors (not considered here) may be affecting the time from approval to first disbursement
 
 ## Disbursing Projects
 
@@ -474,15 +468,13 @@ fmt_number(columns = 2) %>%  tab_header(
     ))  
 ```
 
-
 ### Conclussions
 
-* The First to Final Disbursement Model has a $R^2$ of 0.5
+-   The First to Final Disbursement Model has a $R^2$ of 0.5
 
-* The presence of  a few large outliers ($ > 2 SD$) maybe impacting the model performance
+-   The presence of a few large outliers $( > 2 SD )$ maybe impacting the model performance
 
-* Other external factors (not considered here) maybe affecting the time from first to final disbursement
-
+-   Other external factors (not considered here) maybe affecting the time from first to final disbursement
 
 # Analysis 2 - Testing of Model Features
 
@@ -494,8 +486,8 @@ The test data was generated as follows:
 2.  Create Project Types - The project types stated above are generated
 3.  Milestone Cap is set by random sampling of possible caps (i.e. 3 months, 6 months, 9 months)
 4.  Milestone Override is set by using the actual date of the milestone from the Train DS
-4.  Merge with External DS - For external indicators
-5.  Write to File - Save to CSV file in format accepted by the model
+5.  Merge with External DS - For external indicators
+6.  Write to File - Save to CSV file in format accepted by the model
 
 ```{r datainput check, include=FALSE}
 
@@ -596,7 +588,6 @@ map2_dfr( ctypes , cm  , check_ovr) %>%
 
 As shown above all of the tests performed have **passed**.
 
-
 # Analysis 3 - Testing with Synthetic Data
 
 The simulated data was generated as follows:
@@ -606,7 +597,6 @@ The simulated data was generated as follows:
 3.  Randomize Fields - Key fields i.e. Sector, Profile are randomized, and also the milestone dates
 4.  Merge with External DS - For external indicators
 5.  Write to File - Save to CSV file in format accepted by the model
-
 
 ```{r datainput sim, include=FALSE}
 
@@ -708,9 +698,7 @@ tibble(
   )
 ```
 
-
-The output of the model calculated from the 2 different methods **match**.
-
+The output of the model calculated from the 2 different methods **does not match**.
 
 ## Distribution of Times - Output Data
 
@@ -848,8 +836,6 @@ plot_boxplot(t, by = "proj_type" , ncol = 2)
 
 ```
 
-
-
 # Analysis 4 - Disbursement Profiles
 
 The model generates disbursement profiles, based on the time lapsed (from first to final disbursement) and the cumulative percentage disbursed. For the different project types in the test date we analyse the disbursement profiles produced.
@@ -884,36 +870,36 @@ p4 <- plot_profile( "CD") +
 
 ```
 
-* The disbursement profiles for Not Disbursing and Disbursing Projects are very similar and are almost linear
+-   The disbursement profiles for the Not Disbursing projects all have the same linear 1-to-1 relationship (\$ precentage_disbursed = standard_tenor \$)
+
+-   For Disbursing projects, the starting point of the profile is determined by the percentage already disbursed as at the evaluation date, and then it follows a similar linear relationship
+
+-   This is in line with the trade finance disbursement projection model design as stated in the model documentation:
+
+    > "In view of the small number of Completed projects in the Trade Finance dataset , as well as the expected shorter timeframes between first and final disbursement for Trade Finance transactions, Moody's has recommended a simplified one-to-one mapping between disbursement timing and the proportion disbursed for Trade Finance transactions."
 
 <!-- * The disbursement profile for the Disbursing projects, is less linear as the amount already disbursed determines the starting point of the cumulative disbursement percentage -->
 
-* All projects are assumed to disburse to 100% in the model, but in real life scenarios project may disburse less than 100% of their approved amount
+-   All projects are assumed to disburse to 100% in the model, but in real life scenarios project may disburse less than 100% of their approved amount
 
 # Conclussions and for further discussions
 
-* The model produces outputs which have a normal distribution (centered around mean)
+-   The model produces outputs which have a normal distribution (centered around mean)
 
-* The distributions have a long tail, i.e. the model produces some high values
+-   The distributions have a long tail, i.e. the model produces some high values
 
-* The application of limits (Caps) and overrides on project milestones, performs as expected
+-   The application of limits (Caps) and overrides on project milestones, performs as expected
 
-* There are issues with the reconciliation of the model output which need to be resolved (already raised)
+- There are issues with the reconciliation of the model output which need to be resolved (already raised)
 
-* While the model operated as expected, it was felt the R-code could be made more robust, to be able to better handle errors and unexpected inputs
+-   While the model operated as expected, it was felt the R-code could be made more robust, to be able to better handle errors and unexpected inputs
 
-* There is a need to verify the model against the original specification as set-out in the Business Analysis document
+-   There is a need to verify the model against the original specification as set-out in the Business Analysis document
 
-* While in the testing, the standalone performance of the model was evaluated, it is necessary evaluate the model in conjunction with other ERM models which depend upon it, in order to fully ascertain its performance
+-   While in the testing, the standalone performance of the model was evaluated, it is necessary evaluate the model in conjunction with other ERM models which depend upon it, in order to fully ascertain its performance
 
-* Certain downstream models which will depend on the disbursement projections, require the  disbursement profiles to operate on, will it be possible to produce these from the model ?
+-   Certain downstream models which will depend on the disbursement projections, require the disbursement profiles to operate on, will it be possible to produce these from the model ?
 
-* Can the model summary output be transformed, to provide the likely disbursement by calender year, i.e. can the projected disbursements for 2022 be produced from the model?
+-   Can the model summary output be transformed, to provide the likely disbursement by calender year, i.e. can the projected disbursements for 2022 be produced from the model?
 
-* What is the plan to move the model from prototype to production and its incorporation in to the ERM Data-mart ?
-
-* We would like to internally compare the performance of the model with our existing disbursement modelling techniques, to gauge how much better it is
-
-* The sign-off plan for this model, given that most of the ERM modules to use it, have yet to come on-line
-
-
+-   What is the plan to move the model from prototype to production and its incorporation in to the ERM Data-mart ?

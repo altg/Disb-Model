@@ -1,5 +1,5 @@
 ---
-title: "Generate Project Test Data"
+title: "Generate Trade Test Comp Data"
 output: html_notebook
 editor_options: 
   chunk_output_type: console
@@ -138,6 +138,11 @@ trade_data <-
 
 ```
 
+
+# Load indicator data
+
+
+## Dealing with CPs
 
 ```{r}
 hdfile <- "Inputs/Historical Data  Governance Indicators and Rating_157428296.xlsx"

@@ -53,7 +53,8 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 ### Loading Model Input File
 
-model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"),  stringsAsFactors = F)
+model_input <- fread(input = paste0(input_dir, "isdb_test_prjs.csv"),  stringsAsFactors = F) %>% 
+ filter( str_detect(project_id, "CD") )
 
 
 #na.strings = "",
@@ -378,9 +379,9 @@ for (id in 1:nrow(model_input)) {     #One project at a time
   # Disbursement Profile
   
   
-  # if ( proj$project_id == "CD004" ){
-  #   browser()
-  # }
+  if ( proj$project_id %in% c( "CD004" , "CD015" , "CD025" , "CD028" , "CD051"  ) ){
+    browser()
+  }
   
   if (applicability == "No") {        #If Catch up/Shift isn't applicable
     disb_profile <- t(disb_profile_mapping[which(disb_profile_mapping$Profile == profile), 2:ncol(disb_profile_mapping)])      #Disbursement Profile according to Profile
