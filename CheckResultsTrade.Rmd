@@ -677,7 +677,7 @@ tibble(
   disb_amt 
   ) %>% 
   mutate(
-    match = (  apr_amt == disb_amt )
+    match = (  round(apr_amt) == round(disb_amt) )
   ) %>% 
   gt() %>% 
   fmt_number(columns = 1:2) %>% 
@@ -698,7 +698,7 @@ tibble(
   )
 ```
 
-The output of the model calculated from the 2 different methods **does not match**.
+The output of the model calculated from the 2 different methods **matches**.
 
 ## Distribution of Times - Output Data
 

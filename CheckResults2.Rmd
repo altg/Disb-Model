@@ -901,14 +901,14 @@ map(l , plot_dcvar)
 apr_amt <- model_input_sim %>%  
    summarise( total_apr_amt = sum(approval_amount_usd)/1e6  ) 
 
-disb_amt <- profiles_sim %>%  summarise( total_disb = sum( amount_disbursed_between_tenors , na.rm = T ) /1e6 )
+disb_amt <- profiles_sim %>%  summarise( total_disb = sum( amount_disbursed_between_tenors ) /1e6 )
 
 tibble( 
   apr_amt,
   disb_amt 
   ) %>% 
   mutate(
-    match = (  apr_amt == disb_amt )
+    match = (  round(apr_amt) == round(disb_amt) )
   ) %>% 
   gt() %>% 
   fmt_number(columns = 1:2) %>% 

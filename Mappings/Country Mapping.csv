@@ -2,6 +2,7 @@ country,region_group,country_ldmc
 Afghanistan,Others,LDMC
 Albania,Europe,LDMC
 Algeria,Others,Non-LDMC
+Australia,Others,Non-LDMC
 Azerbaijan,Others,Non-LDMC
 Bahrain,Others,Non-LDMC
 Bangladesh,Others,LDMC
@@ -15,6 +16,7 @@ Cote D'ivoire,Africa,Non-LDMC
 Cyprus,Europe,LDMC
 Djibouti,Africa,LDMC
 Egypt,Others,Non-LDMC
+Fiji,Others,Non-LDMC
 Gabon,Africa,Non-LDMC
 Gambia,Africa,LDMC
 Guinea,Africa,LDMC
@@ -25,17 +27,20 @@ Iran,Others,Non-LDMC
 Iraq,Others,Non-LDMC
 Jordan,Others,Non-LDMC
 Kazakhstan,Others,Non-LDMC
+Kenya,Africa,Non-LDMC
 Kosovo,Europe,Non-LDMC
 Kuwait,Others,Non-LDMC
 Kyrgyzstan,Others,LDMC
 Lebanon,Others,Non-LDMC
 Libya,Others,Non-LDMC
+Malawi,Africa,LDMC
 Malaysia,Others,Non-LDMC
 Maldives,Others,LDMC
 Mali,Africa,LDMC
 Mauritania,Others,LDMC
 Morocco,Others,Non-LDMC
 Mozambique,Africa,LDMC
+Netherlands,Europe,Non-LDMC
 Niger,Africa,LDMC
 Nigeria,Africa,Non-LDMC
 Oman,Others,Non-LDMC
@@ -46,16 +51,21 @@ Saudi Arabia,Others,Non-LDMC
 Senegal,Africa,LDMC
 Sierra Leone,Africa,LDMC
 Somalia,Africa,LDMC
+Sri Lanka,Others,Non-LDMC
 Sudan,Others,LDMC
 Suriname,Others,Non-LDMC
+Switzerland,Europe,Non-LDMC
 Syria,Others,Non-LDMC
 Tajikistan,Others,LDMC
+Tanzania,Africa,Non-LDMC
 Togo,Africa,LDMC
 Tunisia,Others,Non-LDMC
 Turkey,Europe,Non-LDMC
 Turkmenistan,Others,Non-LDMC
 U A E,Others,Non-LDMC
 Uganda,Africa,LDMC
+United Kingdom,Europe,Non-LDMC
+United States of America,Others,Non-LDMC
 Uzbekistan,Others,Non-LDMC
 Yemen,Others,LDMC
 Others,Others,Select Catch Up/Shift

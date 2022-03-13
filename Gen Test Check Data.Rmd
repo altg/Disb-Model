@@ -310,11 +310,12 @@ test_data_in <-
 
 ```{r}
 
-set.seed(5467)
+set.seed(1234)
 
 test_data_lstd <- 
   ops_data %>% 
   filter(proj_type_code > 3)  %>% # Disb projects
+  filter( date_of_first_disbursement != date_of_last_disb) %>% 
   slice_sample(n = sample_size) %>% 
   mutate(
     project_id_org = project_id,

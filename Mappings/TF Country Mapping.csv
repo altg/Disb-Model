@@ -2,6 +2,7 @@ country,country_subregion,country_ldmc
 Afghanistan,S & SE Asia,LDMC
 Albania,Europe,LDMC
 Algeria,North Africa,Non-LDMC
+Australia,Europe,Non-LDMC
 Azerbaijan,CIS & Europe,Non-LDMC
 Bahrain,Middle East,Non-LDMC
 Bangladesh,S & SE Asia,LDMC
@@ -15,6 +16,7 @@ Cote D'ivoire,West Africa,Non-LDMC
 Cyprus,Europe,LDMC
 Djibouti,East Africa,LDMC
 Egypt,North Africa,Non-LDMC
+Fiji,S & SE Asia,Non-LDMC
 Gabon,East Africa,Non-LDMC
 Gambia,West Africa,LDMC
 Guinea,West Africa,LDMC
@@ -25,38 +27,45 @@ Iran,S & SE Asia,Non-LDMC
 Iraq,Middle East,Non-LDMC
 Jordan,Middle East,Non-LDMC
 Kazakhstan,CIS & Europe,Non-LDMC
+Kenya,East Africa,Non-LDMC
 Kosovo,Europe,Non-LDMC
 Kuwait,Middle East,Non-LDMC
 Kyrgyzstan,CIS & Europe,LDMC
 Lebanon,Middle East,Non-LDMC
 Libya,North Africa,Non-LDMC
-Malawi,East Africa,#N/A
+Malawi,East Africa,LDMC
 Malaysia,S & SE Asia,Non-LDMC
 Maldives,S & SE Asia,LDMC
 Mali,West Africa,LDMC
 Mauritania,North Africa,LDMC
 Morocco,North Africa,Non-LDMC
 Mozambique,East Africa,LDMC
+Netherlands,Europe,Non-LDMC
 Niger,West Africa,LDMC
 Nigeria,West Africa,Non-LDMC
 Oman,Middle East,Non-LDMC
 Pakistan,S & SE Asia,Non-LDMC
 Palestine,Middle East,LDMC
 Qatar,Middle East,Non-LDMC
-Regional,West Africa,#N/A
+Regional,West Africa,Non-LDMC
 Saudi Arabia,Middle East,Non-LDMC
 Senegal,West Africa,LDMC
 Sierra Leone,West Africa,LDMC
 Somalia,East Africa,LDMC
+Sri Lanka,S & SE Asia,Non-LDMC
 Sudan,North Africa,LDMC
 Suriname,Latin America,Non-LDMC
+Switzerland,Europe,Non-LDMC
 Syria,Middle East,Non-LDMC
 Tajikistan,CIS & Europe,LDMC
+Tanzania,East Africa,Non-LDMC
 Togo,West Africa,LDMC
 Tunisia,North Africa,Non-LDMC
 Turkey,Europe,Non-LDMC
 Turkmenistan,CIS & Europe,Non-LDMC
 U A E,Middle East,Non-LDMC
 Uganda,East Africa,LDMC
+United Kingdom,Europe,Non-LDMC
+United States of America,Europe,Non-LDMC
 Uzbekistan,CIS & Europe,Non-LDMC
 Yemen,Middle East,LDMC

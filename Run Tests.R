@@ -17,9 +17,6 @@ run_all_rmd <- function(filename) {
 
 run_all_rmd("Gen Test Data.Rmd")
 
-
-
-
 source("IsDB Projects & LoF DM.R")
 
 
