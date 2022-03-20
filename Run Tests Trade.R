@@ -3,12 +3,7 @@
 rm(list = ls())
 
 
-run_all_rmd <- function(filename) {
-  tempR <- tempfile(fileext = ".R")
-  knitr::purl(filename, output=tempR)
-  source(tempR , echo = TRUE)
-  unlink(tempR)
-}
+source("run_all_rmd.R")
 
 
 # Run Sim
@@ -24,7 +19,7 @@ file.copy("Outputs/full_trade_disb_profile.rda" , "Outputs/full_trade_disb_profi
 
 
 # Run Comp
-
+source("run_all_rmd.R")
 run_all_rmd("Gen Trade Test Comp Data.Rmd")
 
 source("IsDB Trade Finance DM.R")
@@ -36,7 +31,7 @@ file.copy("Outputs/full_trade_disb_profile.rda" , "Outputs/full_trade_disb_profi
 
 # Run Check 
 
-
+source("run_all_rmd.R")
 run_all_rmd("Gen Trade Test Check Data.Rmd")
 
 source("IsDB Trade Finance DM.R")

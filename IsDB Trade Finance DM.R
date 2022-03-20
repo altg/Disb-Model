@@ -1,6 +1,6 @@
-### preliminary
+# Disb Model - Trade Finance
 
-# V 5
+# V 6 - 20/03/2022
 
 {
   rm(list = ls())
@@ -60,6 +60,9 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 model_input <- fread(input = paste0(input_dir, "isdb_test_trade.csv"),  stringsAsFactors = F)
 
+# print( proj$project_id)
+
+
 model_input$evaluation_date <- ymd(model_input$evaluation_date)      #Date format in input file for all dates should be yyyy-mm-dd
 model_input$date_of_approval <- ymd(model_input$date_of_approval)
 model_input$date_of_first_disbursement <- ymd(model_input$date_of_first_disbursement)
@@ -77,11 +80,11 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   
   ### Loading Regression Table & Mapping Files
   
-  app_firstdisb_reg <- fread(input = paste0(mappings_dir, "TF Approval to First Disbursement Regression Table.csv"), na.strings = "", stringsAsFactors = F)
-  first_finaldisb_reg <- fread(input = paste0(mappings_dir, "TF First to Final Disbursement Regression Table.csv"), na.strings = "", stringsAsFactors = F)
+  app_firstdisb_reg <- fread(input = paste0(mappings_dir, "TF Approval to First Disbursement Regression Table.csv"), stringsAsFactors = F)
+  first_finaldisb_reg <- fread(input = paste0(mappings_dir, "TF First to Final Disbursement Regression Table.csv"), stringsAsFactors = F)
   
-  country_mapping <- fread(input = paste0(mappings_dir, "TF Country Mapping.csv"), na.strings = "", stringsAsFactors = F)
-  disb_profile_mapping <- fread(input = paste0(mappings_dir, "TF Disbursement Profile Mapping.csv"), na.strings = "", stringsAsFactors = F, header = T)
+  country_mapping <- fread(input = paste0(mappings_dir, "TF Country Mapping.csv"), stringsAsFactors = F)
+  disb_profile_mapping <- fread(input = paste0(mappings_dir, "TF Disbursement Profile Mapping.csv"), stringsAsFactors = F, header = T)
   
   
   model_input$country_sub_region <- country_mapping$country_subregion[match(model_input$country, country_mapping$country)]    #Mapping Country Sub-Region from Country
@@ -204,13 +207,19 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
       
       catchup_shift <- ifelse(tolower(proj$country) == "others", dlg_input(message = "Catch Up/Shift", default = "Catch Up", gui = .GUI)$res,
                               ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", 
-                                     ifelse(tolower(coun_ldmc) == "ldmc", "Shift", "Catch Up")))     #Catch Up/Shift
+                                     ifelse(tolower(coun_ldmc) == "ldmc", "Shift", "Shift")))     #Catch Up/Shift
       
       applicability <- ifelse(is.na(proj$date_of_first_disbursement), "No",
                               ifelse(time_after_event != 0, "Yes",
                                      ifelse(is.na(amount_disb_eval_date), "No", "Yes")))        #Catch up/Shift applicable
       
     } else  {
+      if (proj$date_of_final_disbursement_override == date_of_first_disbursement) {     #Date of Final Override Check
+        dlg_message(paste0("Date of First Disbursement and Date of Final Disbursement Override are same for Project ID: ", proj$project_id, 
+                           ". Kindly check and populate the correct override date."))
+        
+      }
+      
       date_of_final_disbursement <- proj$date_of_final_disbursement_override      #Date of Final Disbursement
       days_from_first_to_finaldisb <- as.numeric(date_of_final_disbursement - date_of_first_disbursement)
       
@@ -220,7 +229,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
       
       coun_ldmc <- country_mapping$country_ldmc[match(proj$country, country_mapping$country)]     #Country LDMC
       
-      catchup_shift <- ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", "Catch Up")     #Since there is an override, Shift shouldn't be applicable
+      catchup_shift <- ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", "Shift")     #Since there is an override, Shift shouldn't be applicable
       
       applicability <- ifelse(is.na(proj$date_of_first_disbursement), "No",
                               ifelse(time_after_event != 0, "Yes",
@@ -335,6 +344,11 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
                                                   disb_profile$profile_days + days_lag)     #Actual Days from First Disbursement
       
       disb_profile$perc_disbursed_shift <- ifelse(disb_profile$std_tenor <= tenor_prof_days, act_perc_disb_eval_date, disb_profile$perc_disbursed)
+      
+      if (tenor_prof_days == 1) {       #If Tenor corresponding to Profile Days is 1
+        disb_profile$perc_disbursed_shift[nrow(disb_profile)] <- 100
+        
+      }
       
       disb_profile <- disb_profile[, c(1, 4:5)]
       colnames(disb_profile)[3] <- "perc_disbursed"
@@ -489,6 +503,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
   
+  
   saveRDS(full_disb_profile , file = paste0(output_dir , "full_trade_disb_profile.rda"))
   # Disbursement Summary
   
@@ -514,6 +529,10 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
 
 
 
+
+# saveRDS(model_output , file = paste0(output_dir , "model_trade_output.rda"))
+
+# saveRDS(full_disb_profile , file = paste0(output_dir , "full_trade_disb_profile.rda"))
 
 
 

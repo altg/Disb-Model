@@ -5,12 +5,7 @@
 rm(list = ls())
 
 
-run_all_rmd <- function(filename) {
-  tempR <- tempfile(fileext = ".R")
-  knitr::purl(filename, output=tempR)
-  source(tempR , echo = TRUE)
-  unlink(tempR)
-}
+source("run_all_rmd.R")
 
 
 # Run Sim
@@ -26,6 +21,7 @@ file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_sim.rda",
 
 
 # Run Comp
+source("run_all_rmd.R")
 
 run_all_rmd("Gen Test Comp Data.Rmd")
 
@@ -40,6 +36,7 @@ file.info("Outputs/model_output_comp.rda")$mtime
 
 # Run Check 
 
+source("run_all_rmd.R")
 
 run_all_rmd("Gen Test Check Data.Rmd")
 
@@ -51,11 +48,11 @@ file.copy("Outputs/full_disb_profile.rda" , "Outputs/full_disb_profile_check.rda
 
 # Profiling
 
-profvis(
-  {
-    source("IsDB Projects & LoF DM profiling.R")
-  }
-)
+# profvis(
+#   {
+#     source("IsDB Projects & LoF DM profiling.R")
+#   }
+# )
 
 
 # files <- c("Country DataPrep.Rmd" , 
