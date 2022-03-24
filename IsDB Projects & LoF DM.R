@@ -2,6 +2,8 @@
 
 # Version V9 -- 20/03/2022
 
+# Version V10 - 23/03/2022
+
 {
   rm(list = ls())
   options(java.parameters = "-Xmx32g" )
@@ -74,6 +76,17 @@ model_input$date_of_first_disbursement_override <- ymd(model_input$date_of_first
 model_input$date_of_final_disbursement_override <- ymd(model_input$date_of_final_disbursement_override)
 
 
+num_proj_initial <- nrow(model_input)
+
+model_input <- model_input[which((model_input$amount_disbursed_at_evaluation_date_usd < model_input$approval_amount_usd) | 
+                                   is.na(model_input$amount_disbursed_at_evaluation_date_usd)),]
+
+if (nrow(model_input) != num_proj_initial) {
+  dlg_message("There are projects with Disbursed Amount greater than or equal to Approval Amount. Such projects are being ignored.")
+  
+}
+
+
 
 # Date format check
 
@@ -94,7 +107,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   disb_profile_mapping <- fread(input = paste0(mappings_dir, "Disbursement Profile Mapping.csv"), stringsAsFactors = F, header = T)
   
   
-  model_input <- model_input[ (amount_disbursed_at_evaluation_date_usd/approval_amount_usd) <= 1.0 ]
+  
   
   #### Disbursement Model ####
   
@@ -333,7 +346,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
                                     first_finaldisb_reg[which(first_finaldisb_reg$input == proj$sub_mode_of_finance),]$value)
       sector <- first_finaldisb_reg[which(first_finaldisb_reg$input == proj$sector),]$value
       
-      first_disb_year <- ifelse(year(date_of_first_disbursement) <= 2020, first_finaldisb_reg[which(first_finaldisb_reg$input == year(date_of_first_disbursement)),]$value, 
+      first_disb_year <- ifelse(year(date_of_first_disbursement) <= 2018, first_finaldisb_reg[which(first_finaldisb_reg$input == year(date_of_first_disbursement)),]$value, 
                                 (first_finaldisb_reg[which(first_finaldisb_reg$input == 2015),]$value +
                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2016),]$value +
                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2017),]$value +
@@ -368,7 +381,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
                                      ifelse(is.na(amount_disb_eval_date), "No", "Yes")))        #Catch up/Shift applicable
       
     } else  {
-      if (proj$date_of_final_disbursement_override == date_of_first_disbursement) {     #Date of Final Override Check
+      if (proj$date_of_final_disbursement_override == date_of_first_disbursement) {     #Date of Final Disbursement Override Check
         dlg_message(paste0("Date of First Disbursement and Date of Final Disbursement Override are same for Project ID: ", proj$project_id, 
                            ". Kindly check and populate the correct override date."))
         
@@ -386,7 +399,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
       coun_ldmc <- country_mapping$country_ldmc[match(proj$country, country_mapping$country)]     #Country LDMC
       profile <- paste0(reg_group, ", ", sec_group)     #Profile
       
-      catchup_shift <- ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", "Shift")     #Since there is an override, Shift shouldn't be applicable
+      catchup_shift <- ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", "Catch Up")     #Since there is an override, Shift shouldn't be applicable
       
       applicability <- ifelse(is.na(proj$date_of_first_disbursement), "No",
                               ifelse(time_after_event != 0, "Yes",
@@ -658,14 +671,18 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   write.csv(x = model_output, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
   
+  
   saveRDS(model_output , file = paste0(output_dir , "model_output.rda"))
+  
   
   # Disbursement Profiles
   
   write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
   
+  
   saveRDS(full_disb_profile , file = paste0(output_dir , "full_disb_profile.rda"))
+  
   
   # Disbursement Summary
   

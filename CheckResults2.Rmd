@@ -933,6 +933,50 @@ tibble(
 The 2 model outputs **do not match**, further investigation is needed.
 
 
+
+```{r echo=FALSE}
+
+apr_amts <- model_input_sim %>%  
+  select( project_id , proj_type, approval_amount_usd ) %>% 
+  mutate( total_apr = (approval_amount_usd)/1e6 )
+  # summarise( total_apr_amt = sum(approval_amount_usd)/1e6  ) 
+
+disb_amts <- profiles_sim %>% 
+  group_by( project_id) %>% 
+  summarise( total_disb = sum( amount_disbursed_between_tenors ) /1e6 )
+
+t <- apr_amts %>% 
+  left_join(disb_amts)
+
+t %>%  filter( is.na( total_disb ) )
+
+tibble( 
+  apr_amt,
+  disb_amt 
+  ) %>% 
+  mutate(
+    match = (  round(apr_amt) == round(disb_amt) )
+  ) %>% 
+  gt() %>% 
+  fmt_number(columns = 1:2) %>% 
+  tab_footnote(
+    footnote = "Total value of approved amounts from Test data set (input)",
+    locations = cells_column_labels(
+      columns = 1
+    )
+  ) %>% 
+  tab_footnote(
+    footnote = "Total value of disbursed amounts from disbursement profiles generated from the model",
+    locations = cells_column_labels(
+      columns = 2
+    )
+  ) %>% 
+  tab_header(
+    title = "Model Input / Output Reconciliation"
+  )
+```
+
+
 ## Distribution of Times - Output Data
 
 The output of the model is analysed to better understand the spread of values produced by the model. The Analysis is done by project type, the dates predicted by the model for each project type.

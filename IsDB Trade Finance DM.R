@@ -2,6 +2,8 @@
 
 # V 6 - 20/03/2022
 
+# V 7 - 23/03/2022
+
 {
   rm(list = ls())
   options(java.parameters = "-Xmx32g" )
@@ -68,6 +70,17 @@ model_input$date_of_approval <- ymd(model_input$date_of_approval)
 model_input$date_of_first_disbursement <- ymd(model_input$date_of_first_disbursement)
 model_input$date_of_first_disbursement_override <- ymd(model_input$date_of_first_disbursement_override)
 model_input$date_of_final_disbursement_override <- ymd(model_input$date_of_final_disbursement_override)
+
+
+num_proj_initial <- nrow(model_input)
+
+model_input <- model_input[which((model_input$amount_disbursed_at_evaluation_date_usd < model_input$approval_amount_usd) | 
+                                   is.na(model_input$amount_disbursed_at_evaluation_date_usd)),]
+
+if (nrow(model_input) != num_proj_initial) {
+  dlg_message("There are projects with Disbursed Amount greater than or equal to Approval Amount. Such projects are being ignored.")
+  
+}
 
 
 
@@ -183,7 +196,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
       rate_type <- first_finaldisb_reg[which(first_finaldisb_reg$input == proj$rate_type),]$value
       revolving <- first_finaldisb_reg[which(first_finaldisb_reg$input == proj$revolving),]$value
       
-      first_disb_year <- ifelse(year(date_of_first_disbursement) <= 2020, first_finaldisb_reg[which(first_finaldisb_reg$input == year(date_of_first_disbursement)),]$value, 
+      first_disb_year <- ifelse(year(date_of_first_disbursement) <= 2018, first_finaldisb_reg[which(first_finaldisb_reg$input == year(date_of_first_disbursement)),]$value, 
                                 (first_finaldisb_reg[which(first_finaldisb_reg$input == 2015),]$value +
                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2016),]$value +
                                    first_finaldisb_reg[which(first_finaldisb_reg$input == 2017),]$value +
@@ -214,14 +227,15 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
                                      ifelse(is.na(amount_disb_eval_date), "No", "Yes")))        #Catch up/Shift applicable
       
     } else  {
-      if (proj$date_of_final_disbursement_override == date_of_first_disbursement) {     #Date of Final Override Check
-        dlg_message(paste0("Date of First Disbursement and Date of Final Disbursement Override are same for Project ID: ", proj$project_id, 
-                           ". Kindly check and populate the correct override date."))
+      if (proj$date_of_final_disbursement_override == date_of_first_disbursement) {     #Date of Final Disbursement Override Check
+        date_of_final_disbursement <- proj$date_of_final_disbursement_override + 1      #Date of Final Disbursement
+        days_from_first_to_finaldisb <- 1
+        
+      } else  {
+        date_of_final_disbursement <- proj$date_of_final_disbursement_override      #Date of Final Disbursement
+        days_from_first_to_finaldisb <- as.numeric(date_of_final_disbursement - date_of_first_disbursement)
         
       }
-      
-      date_of_final_disbursement <- proj$date_of_final_disbursement_override      #Date of Final Disbursement
-      days_from_first_to_finaldisb <- as.numeric(date_of_final_disbursement - date_of_first_disbursement)
       
       time_after_event <- ifelse(is.na(proj$date_of_first_disbursement), 0, 
                                  ifelse(as.numeric(date_of_evaluation - proj$date_of_first_disbursement)>0, as.numeric(date_of_evaluation - date_of_first_disbursement),
@@ -229,11 +243,12 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
       
       coun_ldmc <- country_mapping$country_ldmc[match(proj$country, country_mapping$country)]     #Country LDMC
       
-      catchup_shift <- ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", "Shift")     #Since there is an override, Shift shouldn't be applicable
+      catchup_shift <- ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", "Catch Up")     #Since there is an override, Shift shouldn't be applicable
       
       applicability <- ifelse(is.na(proj$date_of_first_disbursement), "No",
                               ifelse(time_after_event != 0, "Yes",
                                      ifelse(is.na(amount_disb_eval_date), "No", "Yes")))        #Catch up/Shift applicable
+      
       
     }
     
@@ -497,7 +512,9 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   write.csv(x = model_output, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
   
+  
   saveRDS(model_output , file = paste0(output_dir , "model_trade_output.rda"))
+  
   # Disbursement Profiles
   
   write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
@@ -505,6 +522,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   
   
   saveRDS(full_disb_profile , file = paste0(output_dir , "full_trade_disb_profile.rda"))
+  
   # Disbursement Summary
   
   write.csv(x = disb_summ, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Quarterly Summary", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
