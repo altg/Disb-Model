@@ -4,6 +4,8 @@
 
 # V 7 - 23/03/2022
 
+# V 8 - 28/03/2022
+
 {
   rm(list = ls())
   options(java.parameters = "-Xmx32g" )
@@ -62,7 +64,7 @@ mappings_dir <- paste0(dir, "/Mappings/")                   #Setting the path to
 
 model_input <- fread(input = paste0(input_dir, "isdb_test_trade.csv"),  stringsAsFactors = F)
 
-# print( proj$project_id)
+# print( paste0( id ," : " ,  proj$project_id) )
 
 
 model_input$evaluation_date <- ymd(model_input$evaluation_date)      #Date format in input file for all dates should be yyyy-mm-dd
@@ -73,12 +75,21 @@ model_input$date_of_final_disbursement_override <- ymd(model_input$date_of_final
 
 
 num_proj_initial <- nrow(model_input)
+proj_initial <- model_input
 
 model_input <- model_input[which((model_input$amount_disbursed_at_evaluation_date_usd < model_input$approval_amount_usd) | 
-                                   is.na(model_input$amount_disbursed_at_evaluation_date_usd)),]
+                                   is.na(model_input$amount_disbursed_at_evaluation_date_usd)), ]
+
+proj_initial <- proj_initial[-which(proj_initial$project_id %in% model_input$project_id), ]
 
 if (nrow(model_input) != num_proj_initial) {
-  dlg_message("There are projects with Disbursed Amount greater than or equal to Approval Amount. Such projects are being ignored.")
+  proj_IDs <- {}
+  
+  for (i in 1:nrow(proj_initial)) {
+    proj_IDs <- paste0(proj_IDs, "  ", proj_initial$project_id[i])
+  }
+  
+  dlg_message(paste0("There are projects with Disbursed Amount greater than or equal to Approval Amount. Such projects are being ignored. Project ID(s): ", proj_IDs))
   
 }
 
@@ -110,7 +121,7 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   for (id in 1:nrow(model_input)) {     #One project at a time
     proj <- model_input[id,]
     
-    print( proj$project_id)
+    print( paste0( id ," : " ,  proj$project_id) )
     
     date_of_evaluation <- proj$evaluation_date
     amount_disb_eval_date <- proj$amount_disbursed_at_evaluation_date_usd
@@ -512,14 +523,13 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   write.csv(x = model_output, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Outputs", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
   
-  
   saveRDS(model_output , file = paste0(output_dir , "model_trade_output.rda"))
+  
   
   # Disbursement Profiles
   
   write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
-  
   
   saveRDS(full_disb_profile , file = paste0(output_dir , "full_trade_disb_profile.rda"))
   
@@ -540,6 +550,15 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   for (i in seq(length(hs)))
     print(replayPlot(hs[[i]])) # loop over plots and write to pdf
   graphics.off()
+  
+  
+  # Excluded Projects
+  
+  if (nrow(proj_initial) > 0) {
+    write.csv(x = proj_initial, file = paste0(output_dir,"IsDB Trade Finance Disbursement Modelling Excluded Projects", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
+              na ="", row.names = F)
+    
+  }
   
   
 }

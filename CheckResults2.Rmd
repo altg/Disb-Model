@@ -946,34 +946,15 @@ disb_amts <- profiles_sim %>%
   summarise( total_disb = sum( amount_disbursed_between_tenors ) /1e6 )
 
 t <- apr_amts %>% 
-  left_join(disb_amts)
+  left_join(disb_amts) %>% 
+  mutate( match = total_apr == total_disb,
+          match = if_else(is.na(match) , FALSE , match))
 
 t %>%  filter( is.na( total_disb ) )
 
-tibble( 
-  apr_amt,
-  disb_amt 
-  ) %>% 
-  mutate(
-    match = (  round(apr_amt) == round(disb_amt) )
-  ) %>% 
-  gt() %>% 
-  fmt_number(columns = 1:2) %>% 
-  tab_footnote(
-    footnote = "Total value of approved amounts from Test data set (input)",
-    locations = cells_column_labels(
-      columns = 1
-    )
-  ) %>% 
-  tab_footnote(
-    footnote = "Total value of disbursed amounts from disbursement profiles generated from the model",
-    locations = cells_column_labels(
-      columns = 2
-    )
-  ) %>% 
-  tab_header(
-    title = "Model Input / Output Reconciliation"
-  )
+
+t %>% filter( match)
+
 ```
 
 

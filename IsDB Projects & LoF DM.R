@@ -4,6 +4,8 @@
 
 # Version V10 - 23/03/2022
 
+# Version V11 - 28/03/2022
+
 {
   rm(list = ls())
   options(java.parameters = "-Xmx32g" )
@@ -77,12 +79,21 @@ model_input$date_of_final_disbursement_override <- ymd(model_input$date_of_final
 
 
 num_proj_initial <- nrow(model_input)
+proj_initial <- model_input
 
 model_input <- model_input[which((model_input$amount_disbursed_at_evaluation_date_usd < model_input$approval_amount_usd) | 
-                                   is.na(model_input$amount_disbursed_at_evaluation_date_usd)),]
+                                   is.na(model_input$amount_disbursed_at_evaluation_date_usd)), ]
+
+proj_initial <- proj_initial[-which(proj_initial$project_id %in% model_input$project_id), ]
 
 if (nrow(model_input) != num_proj_initial) {
-  dlg_message("There are projects with Disbursed Amount greater than or equal to Approval Amount. Such projects are being ignored.")
+  proj_IDs <- {}
+  
+  for (i in 1:nrow(proj_initial)) {
+    proj_IDs <- paste0(proj_IDs, "  ", proj_initial$project_id[i])
+  }
+  
+  dlg_message(paste0("There are projects with Disbursed Amount greater than or equal to Approval Amount. Such projects are being ignored. Project ID(s): ", proj_IDs))
   
 }
 
@@ -674,15 +685,12 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   
   saveRDS(model_output , file = paste0(output_dir , "model_output.rda"))
   
-  
   # Disbursement Profiles
   
   write.csv(x = full_disb_profile, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Profiles", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
             na ="", row.names = F)
   
-  
   saveRDS(full_disb_profile , file = paste0(output_dir , "full_disb_profile.rda"))
-  
   
   # Disbursement Summary
   
@@ -703,8 +711,16 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
   graphics.off()
   
   
+  # Excluded Projects
+  
+  if (nrow(proj_initial) > 0) {
+    write.csv(x = proj_initial, file = paste0(output_dir,"IsDB Projects & LoF Disbursement Modelling Excluded Projects", " ", username, " ",format(time_log, "%d-%b-%Y %H.%M.%S"), ".csv"),
+              na ="", row.names = F)
+    
+  }
+  
+  
 }
-
 
 
 

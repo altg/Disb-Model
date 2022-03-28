@@ -560,7 +560,7 @@ check_ovr <- function( ctype , mtype ) {
   filter( check_type == ctype ) %>% 
   select( check_type , project_id , sym(days_ovr) , sym(days_pred) ) %>% 
   mutate(
-      check_ovr = !!sym(days_ovr) == !!sym(days_pred) 
+      check_ovr = abs( !!sym(days_ovr) - !!sym(days_pred) ) <= 1 
    ) %>% 
   group_by(check_type) %>% 
     summarise( no_of_tests = n()  , no_pass = sum(check_ovr) ) %>% 
