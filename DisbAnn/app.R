@@ -9,6 +9,7 @@
 
 library(shiny)
 library(DT)
+library(plotly)
 
 require(tidyverse)
 require(readxl)
@@ -23,7 +24,7 @@ output_dir <- paste0(dir , "/../Outputs/")
 
 ops_data_in <- read_excel("../Tests/idb_data.xlsx", sheet = "ops_data")
 
-model_input <- read_csv(file = paste0(input_dir, "isdb_test_prjs.csv")) %>% 
+model_input <- read_csv(file = paste0(input_dir, "isdb_test_prjs.csv") , show_col_types = FALSE) %>% 
     select( -...1) 
 
 model_output <- readRDS( file = paste0(output_dir , "model_output.rda")) %>% 
@@ -48,23 +49,54 @@ ui <- fluidPage(
     titlePanel("Project Disb Profile Analysis"),
 
     # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            selectInput("prjtype",
-                        "Project Type",
-                        choices = proj_type),
-            selectInput("prjs",
-                        "Project",
-                        choices = prjs_list)
-        ),
+    
+    fluidRow(
+        
+        column( 4 ,
+                selectInput("prjtype",
+                            "Project Type",
+                            choices = proj_type) ),
+        column( 4 , 
+                selectInput("prjs",
+                            "Project",
+                            choices = prjs_list) )
+        
+    ),
+    
+    
+    fluidRow(column( 8 ,
+            DT::dataTableOutput('proj_table'))),
+    
+    
+    
+    fluidRow(
+        column( 6 , 
+                plotOutput("profPlot") ) ,
+        column( 6 ,
+                plotlyOutput("disbPlot") )
+    )
+    
+    
+     
+    
+    # sidebarLayout(
+    #     sidebarPanel(
+    #         selectInput("prjtype",
+    #                     "Project Type",
+    #                     choices = proj_type),
+    #         selectInput("prjs",
+    #                     "Project",
+    #                     choices = prjs_list)
+    #     ),
 
         # Show a plot of the generated distribution
-        mainPanel(
-           #plotOutput("distPlot"),
-           DT::dataTableOutput('proj_table'),
-           plotOutput("profPlot")
-        )
-    )
+        # mainPanel(
+        #    #plotOutput("distPlot"),
+        #    DT::dataTableOutput('proj_table'),
+        #    plotOutput("profPlot"),
+        #    plotlyOutput("disbPlot") 
+        # )
+   # )
 )
 
 # Define server logic required to draw a histogram
@@ -115,12 +147,26 @@ server <- function(input, output , session) {
     output$profPlot <- renderPlot({
         profiles %>% filter( project_id == input$prjs ) %>%  
             ggplot( aes( standard_tenor , percentage_disbursed)) + 
-            geom_line()
+            geom_point( color = "orange" ) +
+            geom_smooth( method = "loess"  )
+    })
+    
+    
+    output$disbPlot <- renderPlotly({
+       p <-  profiles %>% filter( project_id == input$prjs ) %>%  
+            ggplot( aes( x = standard_tenor , y =amount_disbursed_between_tenors)) + 
+            geom_point(color="orange")  + 
+            geom_segment( aes(x=standard_tenor, xend=standard_tenor, y=0, yend=amount_disbursed_between_tenors), 
+                          color="grey")
+       
+       ggplotly(p)
     })
 }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
+
 
 
 
