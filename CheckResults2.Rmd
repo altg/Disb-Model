@@ -950,10 +950,10 @@ t <- apr_amts %>%
   mutate( match = total_apr == total_disb,
           match = if_else(is.na(match) , FALSE , match))
 
-t %>%  filter( is.na( total_disb ) )
+# t %>%  filter( is.na( total_disb ) )
 
 
-t %>% filter( match)
+# t %>% filter( match)
 
 ```
 

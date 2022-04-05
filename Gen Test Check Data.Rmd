@@ -63,6 +63,7 @@ ops_data <- ops_data_in %>%
     date_of_effectiveness_override = NA,
     date_of_first_disbursement_override = NA,
     date_of_final_disbursement_override = NA,
+    catchup_override = NA,
     status,
     date_of_last_disb
   ) %>% filter(approval_amount_usd != 0 ,

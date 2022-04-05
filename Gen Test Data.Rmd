@@ -99,8 +99,8 @@ ops_data <- ops_data_in %>%
     date_of_signature_override = "",                       
     date_of_effectiveness_override = "",                 
     date_of_first_disbursement_override = "",              
-    date_of_final_disbursement_override= ""
-    
+    date_of_final_disbursement_override= "",
+    catchup_override = NA
   ) %>% filter( approval_amount_usd != 0 , #!is.na(income_classification),
                 country != "Not Assigned", 
                 !(sub_mode_of_finance %in% c("Loan LDMC", "Grant"))) 

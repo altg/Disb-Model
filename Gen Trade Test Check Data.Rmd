@@ -83,6 +83,7 @@ trade_data <-
     date_of_final_disbursement_override = NA,
     date_of_first_disbursement_act = date_of_first_disbursement,
     date_of_final_disbursement = date_of_last_disb,
+    catchup_override = NA,
     status
   ) %>% 
   left_join(countries , by = c ("country" = "country")) %>% 

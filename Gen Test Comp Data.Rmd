@@ -101,6 +101,7 @@ ops_data <- ops_data_in %>%
     date_of_effective_act = date_of_effective,
     date_of_first_disb_act = date_of_first_disb,
     date_of_last_disb_act = date_of_last_disb,
+    catchup_override = NA,
     status
   ) %>% filter(approval_amount_usd != 0 ,
                #!is.na(income_classification),

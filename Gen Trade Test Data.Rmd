@@ -117,7 +117,8 @@ trade_data <-
     date_of_first_disbursement = NA,                 
     days_from_approval_to_first_disbursement_cap = NA,
     date_of_first_disbursement_override = NA,         
-    date_of_final_disbursement_override = NA
+    date_of_final_disbursement_override = NA,
+    catchup_override = NA
   ) %>% 
   left_join(countries , by = c ("country" = "country")) %>% 
   relocate( income_classification , .after = project_type ) 

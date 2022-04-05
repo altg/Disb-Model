@@ -6,6 +6,8 @@
 
 # V 8 - 28/03/2022
 
+# V 9 - 31/03/2022
+
 {
   rm(list = ls())
   options(java.parameters = "-Xmx32g" )
@@ -229,9 +231,17 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
       
       coun_ldmc <- country_mapping$country_ldmc[match(proj$country, country_mapping$country)]     #Country LDMC
       
-      catchup_shift <- ifelse(tolower(proj$country) == "others", dlg_input(message = "Catch Up/Shift", default = "Catch Up", gui = .GUI)$res,
-                              ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", 
-                                     ifelse(tolower(coun_ldmc) == "ldmc", "Shift", "Shift")))     #Catch Up/Shift
+      
+      if (!is.na(proj$catchup_override) & tolower(proj$catchup_override) == "yes") {      #In case of Catch Up Override
+        catchup_shift <- "Catch Up"
+        
+      } else  {
+        catchup_shift <- ifelse(tolower(proj$country) == "others", dlg_input(message = "Catch Up/Shift", default = "Catch Up", gui = .GUI)$res,
+                                ifelse(time_after_event > days_from_first_to_finaldisb, "Shift", 
+                                       ifelse(tolower(coun_ldmc) == "ldmc", "Shift", "Shift")))     #Catch Up/Shift
+        
+      }
+      
       
       applicability <- ifelse(is.na(proj$date_of_first_disbursement), "No",
                               ifelse(time_after_event != 0, "Yes",
@@ -524,7 +534,6 @@ if (sum(!is.na(model_input$evaluation_date)) != nrow(model_input) | sum(!is.na(m
             na ="", row.names = F)
   
   saveRDS(model_output , file = paste0(output_dir , "model_trade_output.rda"))
-  
   
   # Disbursement Profiles
   
